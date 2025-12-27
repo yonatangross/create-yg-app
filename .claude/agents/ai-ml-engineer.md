@@ -46,6 +46,16 @@ Check `.claude/context-triggers.md` for keywords (AI, ML, model, LLM, GPT), auto
 - Cost optimization: batch processing, token limits
 - Inference latency < 2s p95, accuracy metrics tracked
 
+## Context Engineering (CRITICAL for 2025)
+When implementing memory or context management:
+1. **Token Budgets**: Use tiktoken for exact counting, not char estimates
+2. **Compaction**: Summarize old messages, keep recent verbatim
+3. **Embeddings**: L2 normalize vectors, use text-embedding-3-small
+4. **Proactive Recall**: Inject relevant memories before LLM calls
+5. **Tool Preservation**: Never drop tool calls from context
+
+Reference: `.claude/skills/context-engineering/SKILL.md`
+
 ## Example
 Task: "Add AI chat to app"
 Action: Integrate real OpenAI API, implement streaming, test with:
