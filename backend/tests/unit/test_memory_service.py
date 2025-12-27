@@ -1,8 +1,7 @@
 """Unit tests for MemoryService."""
 
 import uuid
-from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -43,7 +42,7 @@ class TestMemoryService:
         """Test storing memory generates embedding and saves."""
         content = "User prefers dark mode"
 
-        result = await memory_service.store(
+        await memory_service.store(
             content=content,
             memory_type=MemoryType.USER_PREFERENCE,
             conversation_id="conv-123",
@@ -79,7 +78,7 @@ class TestMemoryService:
 
     @pytest.mark.asyncio
     async def test_search_returns_results_with_similarity(
-        self, memory_service, mock_session, mock_embedding_service
+        self, memory_service, mock_session, mock_embedding_service  # noqa: ARG002
     ):
         """Test search returns MemorySearchResult with similarity scores."""
         # Setup mock query result
@@ -114,7 +113,7 @@ class TestMemoryService:
 
     @pytest.mark.asyncio
     async def test_search_filters_by_memory_type(
-        self, memory_service, mock_session, mock_embedding_service
+        self, memory_service, mock_session, mock_embedding_service  # noqa: ARG002
     ):
         """Test search can filter by memory type."""
         mock_session.execute.return_value = MagicMock(all=MagicMock(return_value=[]))
@@ -129,7 +128,7 @@ class TestMemoryService:
 
     @pytest.mark.asyncio
     async def test_proactive_recall_returns_formatted_context(
-        self, memory_service, mock_session, mock_embedding_service
+        self, memory_service, mock_session, mock_embedding_service  # noqa: ARG002
     ):
         """Test proactive recall returns formatted memory context."""
         # Setup mock search results
@@ -138,9 +137,7 @@ class TestMemoryService:
         mock_memory.memory_type = MagicMock(value="user_preference")
 
         mock_result = MagicMock()
-        mock_result.all.return_value = [
-            MagicMock(AgentMemory=mock_memory, distance=0.1)
-        ]
+        mock_result.all.return_value = [MagicMock(AgentMemory=mock_memory, distance=0.1)]
         mock_session.execute.return_value = mock_result
 
         result = await memory_service.proactive_recall("What food do I like?")
@@ -151,7 +148,7 @@ class TestMemoryService:
 
     @pytest.mark.asyncio
     async def test_proactive_recall_empty_when_no_matches(
-        self, memory_service, mock_session, mock_embedding_service
+        self, memory_service, mock_session, mock_embedding_service  # noqa: ARG002
     ):
         """Test proactive recall returns empty string when no matches."""
         mock_session.execute.return_value = MagicMock(all=MagicMock(return_value=[]))
@@ -161,9 +158,7 @@ class TestMemoryService:
         assert result == ""
 
     @pytest.mark.asyncio
-    async def test_get_conversation_summary_returns_summary(
-        self, memory_service, mock_session
-    ):
+    async def test_get_conversation_summary_returns_summary(self, memory_service, mock_session):
         """Test getting conversation summary."""
         mock_summary = MagicMock(spec=ConversationSummary)
         mock_summary.conversation_id = "conv-123"
@@ -191,9 +186,7 @@ class TestMemoryService:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_save_conversation_summary_creates_new(
-        self, memory_service, mock_session
-    ):
+    async def test_save_conversation_summary_creates_new(self, memory_service, mock_session):
         """Test saving new conversation summary."""
         # No existing summary
         mock_result = MagicMock()
@@ -210,9 +203,7 @@ class TestMemoryService:
         assert mock_session.add.call_count >= 1
 
     @pytest.mark.asyncio
-    async def test_save_conversation_summary_updates_existing(
-        self, memory_service, mock_session
-    ):
+    async def test_save_conversation_summary_updates_existing(self, memory_service, mock_session):
         """Test updating existing conversation summary."""
         # Existing summary
         existing = MagicMock(spec=ConversationSummary)
@@ -234,9 +225,7 @@ class TestMemoryService:
         assert existing.message_count == 15
 
     @pytest.mark.asyncio
-    async def test_delete_memory_returns_true_when_found(
-        self, memory_service, mock_session
-    ):
+    async def test_delete_memory_returns_true_when_found(self, memory_service, mock_session):
         """Test deleting existing memory returns True."""
         mock_memory = MagicMock(spec=AgentMemory)
         mock_result = MagicMock()
@@ -249,9 +238,7 @@ class TestMemoryService:
         mock_session.delete.assert_called_once_with(mock_memory)
 
     @pytest.mark.asyncio
-    async def test_delete_memory_returns_false_when_not_found(
-        self, memory_service, mock_session
-    ):
+    async def test_delete_memory_returns_false_when_not_found(self, memory_service, mock_session):
         """Test deleting non-existent memory returns False."""
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
@@ -270,9 +257,7 @@ class TestMemoryService:
         mock_result.scalars.return_value.all.return_value = mock_memories
         mock_session.execute.return_value = mock_result
 
-        results = await memory_service.get_memories_by_type(
-            MemoryType.USER_PREFERENCE, limit=10
-        )
+        results = await memory_service.get_memories_by_type(MemoryType.USER_PREFERENCE, limit=10)
 
         assert len(results) == 2
         mock_session.execute.assert_called_once()
