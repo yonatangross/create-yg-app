@@ -116,9 +116,10 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:  # noqa: AR
             )
 
         # 2. LOAD LONG-TERM MEMORY (PostgreSQL) with graceful degradation
+        # Timeout must accommodate embedding API latency (1-3s for cold start)
         proactive_context = ""
         try:
-            async with asyncio.timeout(2.0):
+            async with asyncio.timeout(5.0):
                 async with get_session() as session:
                     memory_service = MemoryService(session, get_embedding_service())
                     proactive_context = await memory_service.proactive_recall(body.message)
@@ -250,9 +251,10 @@ async def chat_stream(request: Request, body: ChatRequest):  # noqa: ARG001
         )
 
     # 2. LOAD LONG-TERM MEMORY (PostgreSQL) with graceful degradation
+    # Timeout must accommodate embedding API latency (1-3s for cold start)
     proactive_context = ""
     try:
-        async with asyncio.timeout(2.0):
+        async with asyncio.timeout(5.0):
             async with get_session() as session:
                 memory_service = MemoryService(session, get_embedding_service())
                 proactive_context = await memory_service.proactive_recall(body.message)
