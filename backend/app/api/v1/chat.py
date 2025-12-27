@@ -15,6 +15,7 @@ from app.db.session import get_session
 from app.middleware.rate_limit import limiter
 from app.shared.services.cache.redis_service import get_chat_history
 from app.shared.services.memory.embedding_service import get_embedding_service
+from app.shared.services.memory.extraction_service import get_extraction_service
 from app.shared.services.memory.memory_service import MemoryService
 from app.shared.services.stats.usage_stats import get_usage_stats
 
@@ -23,6 +24,43 @@ logger = get_logger(__name__)
 
 # Maximum messages to keep in Redis sliding window
 MAX_CONTEXT_MESSAGES = 20
+
+# Minimum messages before triggering memory extraction
+MIN_MESSAGES_FOR_EXTRACTION = 4
+
+
+async def _extract_memories_background(
+    messages: list,
+    conversation_id: str,
+) -> None:
+    """Background task to extract and store memories from conversation.
+
+    Runs asynchronously without blocking the response.
+    """
+    import traceback
+
+    try:
+        extraction_service = get_extraction_service()
+        async with get_session() as session:
+            memory_service = MemoryService(session, get_embedding_service())
+            stored = await extraction_service.extract_and_store(
+                messages=messages,
+                memory_service=memory_service,
+                conversation_id=conversation_id,
+            )
+            if stored > 0:
+                logger.info(
+                    "background_extraction_complete",
+                    conversation_id=conversation_id,
+                    memories_stored=stored,
+                )
+    except Exception as e:
+        logger.warning(
+            "background_extraction_failed",
+            conversation_id=conversation_id,
+            error=str(e),
+            traceback=traceback.format_exc(),
+        )
 
 
 class ChatRequest(BaseModel):
@@ -187,6 +225,20 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:  # noqa: AR
             # Don't fail request if stats tracking fails
             logger.debug("stats_tracking_failed", error=str(e))
 
+        # 6. EXTRACT MEMORIES (background, non-blocking)
+        # Only extract if we have enough messages for context
+        if len(messages) >= 4:
+            asyncio.create_task(
+                _extract_memories_background(
+                    messages=[
+                        *messages,
+                        HumanMessage(content=body.message),
+                        AIMessage(content=response_text),
+                    ],
+                    conversation_id=conversation_id,
+                )
+            )
+
         # Parse memory context
         memory_items = parse_proactive_context(proactive_context)
 
@@ -348,6 +400,19 @@ async def chat_stream(request: Request, body: ChatRequest):  # noqa: ARG001
                 except Exception as e:
                     # Don't fail stream if stats tracking fails
                     logger.debug("stats_tracking_failed", error=str(e))
+
+                # 5. EXTRACT MEMORIES (background, non-blocking)
+                if len(messages) >= MIN_MESSAGES_FOR_EXTRACTION:
+                    asyncio.create_task(
+                        _extract_memories_background(
+                            messages=[
+                                *messages,
+                                HumanMessage(content=body.message),
+                                AIMessage(content=full_response),
+                            ],
+                            conversation_id=conversation_id,
+                        )
+                    )
 
                 logger.info(
                     "chat_stream_completed",
