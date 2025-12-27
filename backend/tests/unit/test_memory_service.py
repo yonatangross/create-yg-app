@@ -137,8 +137,8 @@ class TestMemoryService:
             memory_type=MemoryType.USER_PREFERENCE,
         )
 
-        # The filter is applied in the SQL query
-        mock_session.execute.assert_called_once()
+        # Execute is called twice: once for timeout, once for query
+        assert mock_session.execute.call_count == 2
 
     @pytest.mark.asyncio
     async def test_proactive_recall_returns_formatted_context(
@@ -152,7 +152,7 @@ class TestMemoryService:
         mock_memory = MagicMock(spec=AgentMemory)
         mock_memory.id = uuid.uuid4()
         mock_memory.content = "User likes pizza"
-        mock_memory.memory_type = MagicMock(value="user_preference")
+        mock_memory.memory_type = MemoryType.USER_PREFERENCE
         mock_memory.relevance_score = 1.0
         mock_memory.last_accessed_at = None
 
@@ -387,8 +387,8 @@ class TestMemoryServiceRelevanceDecay:
 
         await memory_service.search("query", agent_type="chat")
 
-        # Verify execute was called (filtering happens in SQL)
-        mock_session.execute.assert_called_once()
+        # Execute is called twice: once for timeout, once for query
+        assert mock_session.execute.call_count == 2
 
     @pytest.mark.asyncio
     async def test_proactive_recall_tracks_access(
@@ -402,7 +402,7 @@ class TestMemoryServiceRelevanceDecay:
         mock_memory = MagicMock(spec=AgentMemory)
         mock_memory.id = uuid.uuid4()
         mock_memory.content = "User likes pizza"
-        mock_memory.memory_type = MagicMock(value="user_preference")
+        mock_memory.memory_type = MemoryType.USER_PREFERENCE
         mock_memory.relevance_score = 0.8
         mock_memory.last_accessed_at = None
 
@@ -427,7 +427,7 @@ class TestMemoryServiceRelevanceDecay:
         mock_memory = MagicMock(spec=AgentMemory)
         mock_memory.id = uuid.uuid4()
         mock_memory.content = "Code review insight"
-        mock_memory.memory_type = MagicMock(value="key_insight")
+        mock_memory.memory_type = MemoryType.KEY_INSIGHT
         mock_memory.relevance_score = 0.9
         mock_memory.last_accessed_at = None
 

@@ -7,9 +7,17 @@ Reference: .claude/skills/context-engineering/SKILL.md - Phase 3
 """
 
 import hashlib
+import json
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import Enum
+from typing import Protocol
+
+from redis.asyncio import Redis
+
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class ArtifactSection(str, Enum):
@@ -52,16 +60,176 @@ class Artifact:
     size_bytes: int
     content_hash: str
 
+    def to_dict(self) -> dict:
+        """Convert artifact to dictionary for serialization."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Artifact":
+        """Create artifact from dictionary."""
+        return cls(**data)
+
+
+class ArtifactBackend(Protocol):
+    """Protocol for artifact storage backends.
+
+    Backends must implement these methods to store/retrieve artifacts.
+    Supports in-memory (testing), Redis (production), or custom implementations.
+    """
+
+    async def get(self, uri: str) -> Artifact | None:
+        """Get artifact by URI."""
+        ...
+
+    async def set(self, uri: str, artifact: Artifact) -> None:
+        """Store artifact by URI."""
+        ...
+
+    async def delete(self, uri: str) -> bool:
+        """Delete artifact by URI. Returns True if deleted, False if not found."""
+        ...
+
+
+class InMemoryBackend:
+    """In-memory artifact backend for testing and development.
+
+    Fast but ephemeral - data lost on restart.
+    """
+
+    def __init__(self) -> None:
+        """Initialize empty in-memory store."""
+        self._artifacts: dict[str, Artifact] = {}
+
+    async def get(self, uri: str) -> Artifact | None:
+        """Get artifact from memory."""
+        return self._artifacts.get(uri)
+
+    async def set(self, uri: str, artifact: Artifact) -> None:
+        """Store artifact in memory."""
+        self._artifacts[uri] = artifact
+
+    async def delete(self, uri: str) -> bool:
+        """Delete artifact from memory."""
+        if uri in self._artifacts:
+            del self._artifacts[uri]
+            return True
+        return False
+
+
+class RedisBackend:
+    """Redis artifact backend for production.
+
+    Persistent, distributed, and scalable artifact storage.
+    Artifacts are serialized to JSON and stored with TTL.
+
+    Attributes:
+        redis: Redis async client
+        ttl: Time-to-live in seconds (default 7 days)
+        prefix: Key prefix for namespacing ("artifact:")
+    """
+
+    def __init__(self, redis: Redis, ttl: int = 604800) -> None:
+        """Initialize Redis backend.
+
+        Args:
+            redis: Redis async client instance
+            ttl: Time-to-live in seconds (default 604800 = 7 days)
+        """
+        self.redis = redis
+        self.ttl = ttl
+        self.prefix = "artifact:"
+
+    def _redis_key(self, uri: str) -> str:
+        """Convert artifact URI to Redis key.
+
+        Args:
+            uri: Artifact URI (e.g., "artifact://abc123")
+
+        Returns:
+            Redis key (e.g., "artifact:artifact://abc123")
+        """
+        return f"{self.prefix}{uri}"
+
+    async def get(self, uri: str) -> Artifact | None:
+        """Get artifact from Redis.
+
+        Args:
+            uri: Artifact URI
+
+        Returns:
+            Artifact if found, None otherwise
+        """
+        key = self._redis_key(uri)
+        try:
+            cached = await self.redis.get(key)
+            if cached:
+                data = json.loads(cached)
+                logger.debug("artifact_cache_hit", uri=uri)
+                return Artifact.from_dict(data)
+            logger.debug("artifact_cache_miss", uri=uri)
+            return None
+        except Exception as e:
+            logger.warning("artifact_get_error", uri=uri, error=str(e))
+            return None
+
+    async def set(self, uri: str, artifact: Artifact) -> None:
+        """Store artifact in Redis.
+
+        Args:
+            uri: Artifact URI
+            artifact: Artifact to store
+        """
+        key = self._redis_key(uri)
+        try:
+            data = json.dumps(artifact.to_dict())
+            await self.redis.setex(key, self.ttl, data)
+            logger.debug(
+                "artifact_cached",
+                uri=uri,
+                size_bytes=artifact.size_bytes,
+                ttl_seconds=self.ttl,
+            )
+        except Exception as e:
+            logger.warning("artifact_set_error", uri=uri, error=str(e))
+
+    async def delete(self, uri: str) -> bool:
+        """Delete artifact from Redis.
+
+        Args:
+            uri: Artifact URI
+
+        Returns:
+            True if deleted, False if not found
+        """
+        key = self._redis_key(uri)
+        try:
+            deleted = await self.redis.delete(key)
+            return deleted > 0
+        except Exception as e:
+            logger.warning("artifact_delete_error", uri=uri, error=str(e))
+            return False
+
 
 class ArtifactStore:
-    """In-memory store for large content with selective loading.
+    """Artifact store for large content with selective loading and pluggable backends.
 
     Stores content externally to context window and loads sections
     on-demand. Automatically generates summaries for content >5KB.
+    Supports multiple backends: in-memory (dev/test) and Redis (production).
 
     Example:
+        # In-memory backend (testing):
         store = ArtifactStore()
         uri = await store.store(large_document)
+
+        # Redis backend (production):
+        from redis.asyncio import from_url
+        redis = from_url(settings.REDIS_URL)
+        backend = RedisBackend(redis)
+        store = ArtifactStore(backend=backend)
+        uri = await store.store(large_document)
+
+        # Load sections:
         summary = await store.load(uri, ArtifactSection.SUMMARY)
         full = await store.load(uri, ArtifactSection.FULL)
 
@@ -75,12 +243,14 @@ class ArtifactStore:
     SUMMARY_MAX_CHARS = 2000
     DEFAULT_FIRST_N_CHARS = 5000
 
-    def __init__(self) -> None:
-        """Initialize empty artifact store.
+    def __init__(self, backend: ArtifactBackend | None = None) -> None:
+        """Initialize artifact store with backend.
 
-        Note: Currently in-memory only. Future: Redis/S3 backend.
+        Args:
+            backend: Storage backend (defaults to InMemoryBackend).
+                     Use RedisBackend for production.
         """
-        self._artifacts: dict[str, Artifact] = {}
+        self.backend = backend or InMemoryBackend()
 
     async def store(
         self,
@@ -115,7 +285,7 @@ class ArtifactStore:
             content_hash=content_hash,
         )
 
-        self._artifacts[uri] = artifact
+        await self.backend.set(uri, artifact)
         return uri
 
     async def load(
@@ -135,7 +305,7 @@ class ArtifactStore:
         Raises:
             ValueError: If artifact not found
         """
-        artifact = self._artifacts.get(uri)
+        artifact = await self.backend.get(uri)
         if not artifact:
             raise ValueError(f"Artifact not found: {uri}")
 
@@ -153,7 +323,7 @@ class ArtifactStore:
         # Fallback for unknown section
         return artifact.summary or artifact.full_content[: self.SUMMARY_MAX_CHARS]
 
-    def get_metadata(self, uri: str) -> dict[str, int | str]:
+    async def get_metadata(self, uri: str) -> dict[str, int | str]:
         """Get artifact metadata without loading content.
 
         Args:
@@ -165,7 +335,7 @@ class ArtifactStore:
         Raises:
             ValueError: If artifact not found
         """
-        artifact = self._artifacts.get(uri)
+        artifact = await self.backend.get(uri)
         if not artifact:
             raise ValueError(f"Artifact not found: {uri}")
 
@@ -177,7 +347,7 @@ class ArtifactStore:
             "headings_count": len(artifact.headings),
         }
 
-    def delete(self, uri: str) -> bool:
+    async def delete(self, uri: str) -> bool:
         """Delete artifact from store.
 
         Args:
@@ -186,10 +356,7 @@ class ArtifactStore:
         Returns:
             True if deleted, False if not found
         """
-        if uri in self._artifacts:
-            del self._artifacts[uri]
-            return True
-        return False
+        return await self.backend.delete(uri)
 
     def _extract_code_blocks(self, content: str) -> list[str]:
         """Extract fenced code blocks from markdown.
@@ -230,3 +397,13 @@ class ArtifactStore:
         if len(content) > self.SUMMARY_MAX_CHARS:
             return content[: self.SUMMARY_MAX_CHARS] + "..."
         return content
+
+
+__all__ = [
+    "Artifact",
+    "ArtifactSection",
+    "ArtifactStore",
+    "ArtifactBackend",
+    "InMemoryBackend",
+    "RedisBackend",
+]

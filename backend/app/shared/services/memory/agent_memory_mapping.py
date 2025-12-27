@@ -25,6 +25,26 @@ AGENT_MEMORY_MAP: dict[str, list[MemoryType]] = {
         MemoryType.USER_PREFERENCE,
         MemoryType.LEARNED_FACT,
     ],
+    "backend-system-architect": [
+        MemoryType.KEY_INSIGHT,
+        MemoryType.LEARNED_FACT,
+    ],
+    "frontend-ui-developer": [
+        MemoryType.USER_PREFERENCE,
+        MemoryType.KEY_INSIGHT,
+    ],
+    "ai-ml-engineer": [
+        MemoryType.KEY_INSIGHT,
+        MemoryType.LEARNED_FACT,
+    ],
+    "code-quality-reviewer": [
+        MemoryType.KEY_INSIGHT,
+        MemoryType.LEARNED_FACT,
+    ],
+    "product-manager": [
+        MemoryType.USER_PREFERENCE,
+        MemoryType.CONVERSATION_SUMMARY,
+    ],
 }
 
 

@@ -6,7 +6,7 @@ import json
 import logging
 import math
 from functools import lru_cache
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import tiktoken
 from openai import (
@@ -25,8 +25,12 @@ from tenacity import (
     wait_exponential,
 )
 
+from app.core.circuit_breaker import CircuitBreakerOpenError, openai_breaker
 from app.core.config import settings
 from app.core.logging import get_logger
+
+if TYPE_CHECKING:
+    from app.shared.services.memory.embedding_cache import EmbeddingCache
 
 logger = get_logger(__name__)
 # Get standard logger for tenacity's before_sleep_log (it doesn't support structlog)
@@ -92,8 +96,13 @@ class EmbeddingService:
     BATCH_POLL_INTERVAL = 60  # Initial poll interval in seconds
     BATCH_MAX_POLL_ATTEMPTS = 1440  # 24 hours at 1 min intervals
 
-    def __init__(self) -> None:
-        """Initialize the embedding service."""
+    def __init__(self, cache: "EmbeddingCache | None" = None) -> None:
+        """Initialize the embedding service.
+
+        Args:
+            cache: Optional Redis cache for embeddings. If provided, embeddings
+                   will be cached to reduce API costs (80%+ savings on repeated content).
+        """
         if not settings.OPENAI_API_KEY:
             msg = "OPENAI_API_KEY is required for embeddings"
             raise ValueError(msg)
@@ -102,6 +111,7 @@ class EmbeddingService:
         self.model = "text-embedding-3-small"
         self.dimensions = 1536
         self.encoding = tiktoken.get_encoding("cl100k_base")
+        self.cache = cache
 
     def count_tokens(self, text: str) -> int:
         """Count tokens in text using tiktoken.
@@ -129,31 +139,88 @@ class EmbeddingService:
             return text
         return self.encoding.decode(tokens[:max_tokens])
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=2, min=1, max=32),
-        retry=retry_if_exception(_should_retry_on_exception),
-        before_sleep=before_sleep_log(_stdlib_logger, logging.WARNING),
-    )
-    async def generate_embedding(self, text: str) -> EmbeddingVector:
+    async def generate_embedding(self, text: str, use_cache: bool = True) -> EmbeddingVector:
         """Generate a 1536-dimensional L2-normalized embedding vector.
 
+        Protected by circuit breaker to fail fast when OpenAI API is unavailable.
         Retries up to 3 times with exponential backoff (1s -> 2s -> 4s -> 8s -> 16s -> 32s)
         on transient errors (RateLimitError, APIError, APITimeoutError).
 
         Args:
             text: The input text to embed. Truncated to MAX_TOKENS (8000) tokens.
+            use_cache: Whether to use cache if available (default True). Set to False
+                      to bypass cache and always generate fresh embedding.
 
         Returns:
             A list of 1536 L2-normalized floats representing the semantic embedding.
 
         Raises:
             ValueError: If text is empty.
+            CircuitBreakerOpenError: If OpenAI API circuit is open.
             RateLimitError: If rate limit exceeded after retries.
             APIError: If API error persists after retries.
             APITimeoutError: If timeout persists after retries.
             AuthenticationError: If API key is invalid (no retry).
             BadRequestError: If request is malformed (no retry).
+
+        Example:
+            # With cache (recommended for production):
+            service = EmbeddingService(cache=get_embedding_cache())
+            embedding = await service.generate_embedding("Hello, world!")
+
+            # Without cache (testing):
+            service = EmbeddingService()
+            embedding = await service.generate_embedding("Hello, world!")
+        """
+        # Use cache if available and enabled
+        if use_cache and self.cache is not None:
+            return await self.cache.get_or_generate(
+                text,
+                lambda t: self._generate_with_circuit_breaker(t),
+            )
+
+        # No cache - generate directly
+        return await self._generate_with_circuit_breaker(text)
+
+    async def _generate_with_circuit_breaker(self, text: str) -> EmbeddingVector:
+        """Generate embedding with circuit breaker protection.
+
+        Args:
+            text: Text to embed
+
+        Returns:
+            Embedding vector
+
+        Raises:
+            CircuitBreakerOpenError: If OpenAI API circuit is open
+        """
+        try:
+            return await openai_breaker.call(self._generate_embedding_internal, text)
+        except CircuitBreakerOpenError:
+            logger.error(
+                "openai_circuit_open",
+                text_length=len(text) if text else 0,
+            )
+            raise
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2, min=1, max=32),
+        retry=retry_if_exception(_should_retry_on_exception),
+        before_sleep=before_sleep_log(_stdlib_logger, logging.WARNING),
+    )
+    async def _generate_embedding_internal(self, text: str) -> EmbeddingVector:
+        """Internal method wrapped with circuit breaker and retry logic.
+
+        Args:
+            text: The input text to embed.
+
+        Returns:
+            L2-normalized embedding vector.
+
+        Raises:
+            ValueError: If text is empty or dimensions are invalid.
+            Various OpenAI exceptions: For API errors.
         """
         if not text or not text.strip():
             msg = "Cannot generate embedding for empty text"
@@ -197,12 +264,6 @@ class EmbeddingService:
 
         return normalized_embedding
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=2, min=1, max=32),
-        retry=retry_if_exception(_should_retry_on_exception),
-        before_sleep=before_sleep_log(_stdlib_logger, logging.WARNING),
-    )
     async def generate_embeddings_batch(
         self,
         texts: list[str],
@@ -210,6 +271,7 @@ class EmbeddingService:
     ) -> list[EmbeddingVector]:
         """Generate L2-normalized embeddings for multiple texts.
 
+        Protected by circuit breaker to fail fast when OpenAI API is unavailable.
         Processes texts in batches for efficiency. Retries up to 3 times with
         exponential backoff on transient errors (RateLimitError, APIError, APITimeoutError).
 
@@ -221,6 +283,7 @@ class EmbeddingService:
             List of L2-normalized embedding vectors in the same order as input.
 
         Raises:
+            CircuitBreakerOpenError: If OpenAI API circuit is open.
             RateLimitError: If rate limit exceeded after retries.
             APIError: If API error persists after retries.
             APITimeoutError: If timeout persists after retries.
@@ -228,6 +291,37 @@ class EmbeddingService:
         if not texts:
             return []
 
+        try:
+            return await openai_breaker.call(
+                self._generate_embeddings_batch_internal, texts, batch_size
+            )
+        except CircuitBreakerOpenError:
+            logger.error(
+                "openai_circuit_open",
+                text_count=len(texts),
+            )
+            raise
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2, min=1, max=32),
+        retry=retry_if_exception(_should_retry_on_exception),
+        before_sleep=before_sleep_log(_stdlib_logger, logging.WARNING),
+    )
+    async def _generate_embeddings_batch_internal(
+        self,
+        texts: list[str],
+        batch_size: int = 100,
+    ) -> list[EmbeddingVector]:
+        """Internal method wrapped with circuit breaker and retry logic.
+
+        Args:
+            texts: List of texts to embed.
+            batch_size: Number of texts per API call.
+
+        Returns:
+            List of L2-normalized embedding vectors.
+        """
         all_embeddings: list[EmbeddingVector] = []
 
         for i in range(0, len(texts), batch_size):

@@ -55,6 +55,7 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str | None = Field(default=None)
+    DATABASE_QUERY_TIMEOUT: int = Field(default=30000)  # milliseconds (30 seconds)
 
     # Redis Connection
     REDIS_URL: str = Field(default="redis://localhost:6390")

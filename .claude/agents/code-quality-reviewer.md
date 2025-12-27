@@ -63,6 +63,78 @@ Check `.claude/context-triggers.md` for keywords (test, review, quality, bug, li
 - Performance: No N+1 queries, proper memoization
 - Documentation: JSDoc for public APIs, README updates
 
+## Production Backend Review Checklist (CRITICAL 2025)
+**MANDATORY for all backend code reviews:**
+
+### Resilience Patterns
+| Pattern | Check | Severity |
+|---------|-------|----------|
+| Request Timeouts | All async external calls wrapped with `timeout()` | CRITICAL |
+| Circuit Breakers | External services have circuit breaker | HIGH |
+| Graceful Degradation | Non-critical failures don't crash request | HIGH |
+| Rate Limiting | Public endpoints have rate limits | CRITICAL |
+| Connection Pooling | Database has pool config | HIGH |
+
+### Performance Patterns
+| Pattern | Check | Severity |
+|---------|-------|----------|
+| N+1 Queries | No SELECT in loops, use JOINs/CTEs | CRITICAL |
+| Caching | Expensive operations cached (Redis) | HIGH |
+| Batch Operations | Multiple DB ops batched | MEDIUM |
+| Index Coverage | Queries use indexes (EXPLAIN ANALYZE) | HIGH |
+
+### Observability Patterns
+| Pattern | Check | Severity |
+|---------|-------|----------|
+| Structured Logging | Using structlog/JSON, not print() | HIGH |
+| Trace IDs | Correlation IDs in all logs | MEDIUM |
+| Metrics | Prometheus counters/histograms | MEDIUM |
+| Health Checks | /health and /ready endpoints | HIGH |
+
+### Python/FastAPI Specific
+```python
+# ❌ FLAG: Missing timeout
+result = await external_service.call()  # VIOLATION
+
+# ✅ REQUIRE: Timeout wrapper
+async with timeout(30.0):
+    result = await external_service.call()
+
+# ❌ FLAG: N+1 query pattern
+for item in items:
+    related = await db.get(item.related_id)  # VIOLATION
+
+# ✅ REQUIRE: Batch query
+related_ids = [item.related_id for item in items]
+related = await db.get_many(related_ids)
+
+# ❌ FLAG: In-memory state that grows unbounded
+cache: dict[str, Any] = {}  # VIOLATION - OOM risk
+
+# ✅ REQUIRE: Redis or LRU with max size
+from functools import lru_cache
+@lru_cache(maxsize=1000)
+def cached_func(): ...
+
+# ❌ FLAG: No error handling on optional features
+context = await memory_service.recall(query)  # VIOLATION
+
+# ✅ REQUIRE: Graceful degradation
+try:
+    context = await memory_service.recall(query)
+except Exception as e:
+    logger.warning("memory_recall_failed", error=str(e))
+    context = ""
+```
+
+### ML/AI Specific
+| Pattern | Check | Severity |
+|---------|-------|----------|
+| Embedding Cache | Embeddings cached in Redis | CRITICAL |
+| Cost Tracking | API tokens counted | HIGH |
+| Rate Limit Handling | Retry with backoff on 429 | HIGH |
+| Model Fallbacks | Fallback to smaller model if main fails | MEDIUM |
+
 ## Async & LLM Code Review (v3.6.0)
 **When reviewing async code, check for:**
 - Timeout protection: All external calls wrapped with `asyncio.timeout()` or `Promise.race()`

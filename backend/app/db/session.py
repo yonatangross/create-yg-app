@@ -4,6 +4,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import lru_cache
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -16,10 +17,16 @@ from app.core.config import settings
 
 @lru_cache
 def get_engine() -> AsyncEngine:
-    """Get cached async database engine.
+    """Get cached async database engine with optimized connection pooling.
 
     Returns:
-        Configured AsyncEngine with connection pooling.
+        Configured AsyncEngine with production-ready connection pooling.
+
+    Pool Configuration:
+        - pool_size=20: Base connection pool size (increased from 5 for better concurrency)
+        - max_overflow=10: Additional connections allowed during peak load
+        - pool_pre_ping=True: Validates connections before use (prevents stale connections)
+        - pool_recycle=3600: Recycle connections every hour (prevents long-lived connection issues)
     """
     if not settings.DATABASE_URL:
         msg = "DATABASE_URL is not configured"
@@ -29,8 +36,9 @@ def get_engine() -> AsyncEngine:
         settings.DATABASE_URL,
         echo=settings.is_development(),
         pool_pre_ping=True,
-        pool_size=5,
+        pool_size=20,  # Increased for better concurrency
         max_overflow=10,
+        pool_recycle=3600,  # Recycle connections every hour
     )
 
 
@@ -85,3 +93,18 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     async with get_session() as session:
         yield session
+
+
+async def set_statement_timeout(session: AsyncSession, timeout_ms: int) -> None:
+    """Set statement timeout for the current session.
+
+    Args:
+        session: The database session.
+        timeout_ms: Timeout in milliseconds.
+
+    Usage:
+        async with get_session() as session:
+            await set_statement_timeout(session, 5000)  # 5 second timeout
+            result = await session.execute(stmt)
+    """
+    await session.execute(text(f"SET LOCAL statement_timeout = {timeout_ms}"))

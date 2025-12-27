@@ -1,5 +1,6 @@
 """Unit tests for EmbeddingService."""
 
+import contextlib
 import math
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -8,6 +9,8 @@ import pytest
 from openai import APIError, APITimeoutError, AuthenticationError, BadRequestError, RateLimitError
 from tenacity import RetryError
 
+from app.core.circuit_breaker import openai_breaker
+from app.core.resilience import CircuitBreakerOpenError
 from app.shared.services.memory.embedding_service import (
     EmbeddingService,
     get_embedding_service,
@@ -700,3 +703,131 @@ class TestGetEmbeddingService:
 
             with pytest.raises(ValueError, match="OPENAI_API_KEY is required"):
                 get_embedding_service()
+
+
+class TestCircuitBreaker:
+    """Tests for circuit breaker integration with EmbeddingService."""
+
+    @pytest.fixture
+    def embedding_service(self):
+        """Create EmbeddingService with mocked client."""
+        with patch("app.shared.services.memory.embedding_service.settings") as mock_settings:
+            mock_settings.OPENAI_API_KEY = "test-key"
+            service = EmbeddingService()
+            service.client = MagicMock()
+            # Reset circuit breaker state before each test
+            openai_breaker.reset()
+            return service
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_opens_after_failures(self, embedding_service):
+        """Test circuit breaker opens after max failures (5)."""
+        # Mock to always fail with APIError
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=APIError("API error", request=MagicMock(), body=None)
+        )
+
+        # Fail 5 times (should open circuit after 5th failure)
+        for _ in range(5):
+            with contextlib.suppress(APIError, RetryError):
+                await embedding_service.generate_embedding("test")
+
+        # Circuit should now be open - next call should raise CircuitBreakerOpenError
+        with pytest.raises(CircuitBreakerOpenError):
+            await embedding_service.generate_embedding("test")
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_allows_requests_when_closed(self, embedding_service):
+        """Test circuit breaker allows requests when closed."""
+        # Mock successful response
+        mock_response = MagicMock()
+        mock_response.data = [MagicMock(embedding=[0.5] * 1536)]
+        mock_response.usage.total_tokens = 10
+        embedding_service.client.embeddings.create = AsyncMock(return_value=mock_response)
+
+        # Should succeed without circuit breaker interference
+        result = await embedding_service.generate_embedding("test")
+        assert len(result) == 1536
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_resets_after_success(self, embedding_service):
+        """Test circuit breaker resets failure count after success."""
+        mock_response = MagicMock()
+        mock_response.data = [MagicMock(embedding=[0.5] * 1536)]
+        mock_response.usage.total_tokens = 10
+
+        # Fail once, then succeed
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=[
+                APIError("API error", request=MagicMock(), body=None),
+                mock_response,
+                mock_response,
+            ]
+        )
+
+        # First call fails, but succeeds on retry
+        result = await embedding_service.generate_embedding("test")
+        assert len(result) == 1536
+
+        # Second call should succeed normally (failure count reset)
+        result = await embedding_service.generate_embedding("test again")
+        assert len(result) == 1536
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_with_batch_embeddings(self, embedding_service):
+        """Test circuit breaker protects batch embeddings."""
+        # Mock to always fail
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=APIError("API error", request=MagicMock(), body=None)
+        )
+
+        # Fail 5 times to open circuit
+        for _ in range(5):
+            with contextlib.suppress(APIError, RetryError):
+                await embedding_service.generate_embeddings_batch(["test"])
+
+        # Circuit should be open now
+        with pytest.raises(CircuitBreakerOpenError):
+            await embedding_service.generate_embeddings_batch(["test"])
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_excludes_value_errors(self, embedding_service):
+        """Test circuit breaker doesn't count ValueError as failure."""
+        # ValueError should not be counted by circuit breaker
+        # (it's in excluded_exceptions in CircuitBreakerConfig)
+
+        # This should not affect circuit state
+        with pytest.raises(ValueError):
+            await embedding_service.generate_embedding("")
+
+        # Circuit should still be closed
+        mock_response = MagicMock()
+        mock_response.data = [MagicMock(embedding=[0.5] * 1536)]
+        mock_response.usage.total_tokens = 10
+        embedding_service.client.embeddings.create = AsyncMock(return_value=mock_response)
+
+        result = await embedding_service.generate_embedding("valid text")
+        assert len(result) == 1536
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_logs_open_state(self, embedding_service):
+        """Test circuit breaker logs when circuit opens."""
+        # Mock to always fail
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=APIError("API error", request=MagicMock(), body=None)
+        )
+
+        # Fail enough times to open circuit
+        for _ in range(5):
+            with contextlib.suppress(APIError, RetryError):
+                await embedding_service.generate_embedding("test")
+
+        # Next call should raise CircuitBreakerOpenError and log it
+        with patch("app.shared.services.memory.embedding_service.logger") as mock_logger:
+            with pytest.raises(CircuitBreakerOpenError):
+                await embedding_service.generate_embedding("test")
+
+            # Verify error was logged
+            mock_logger.error.assert_called_once()
+            call_args = mock_logger.error.call_args
+            assert call_args[0][0] == "openai_circuit_open"

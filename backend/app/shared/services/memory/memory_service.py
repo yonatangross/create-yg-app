@@ -7,8 +7,10 @@ from uuid import UUID
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.models.memory import AgentMemory, ConversationSummary, MemoryType
+from app.db.session import set_statement_timeout
 from app.shared.services.memory.agent_memory_mapping import get_memory_types_for_agent
 from app.shared.services.memory.embedding_service import (
     EmbeddingService,
@@ -182,6 +184,9 @@ class MemoryService:
             agent_type=agent_type,
         )
 
+        # Set query timeout for vector search (critical query)
+        await set_statement_timeout(self.session, settings.DATABASE_QUERY_TIMEOUT)
+
         # Generate query embedding
         query_embedding = await self.embedding_service.generate_embedding(query)
         max_distance = 1.0 - threshold
@@ -271,7 +276,7 @@ class MemoryService:
 
         lines = ["## Relevant Context from Memory\n"]
         for i, r in enumerate(results, 1):
-            type_label = r.memory.memory_type.value.replace("_", " ").title()
+            type_label = r.memory.memory_type.replace("_", " ").title()
             lines.append(f"{i}. [{type_label}] {r.memory.content}\n")
 
         context_str = "\n".join(lines)
@@ -325,7 +330,7 @@ class MemoryService:
 
         lines = ["## Relevant Context from Memory\n"]
         for i, r in enumerate(results, 1):
-            type_label = r.memory.memory_type.value.replace("_", " ").title()
+            type_label = r.memory.memory_type.replace("_", " ").title()
             lines.append(f"{i}. [{type_label}] {r.memory.content}\n")
 
         context_str = "\n".join(lines)
@@ -342,36 +347,25 @@ class MemoryService:
     async def _track_memory_access(self, memory_ids: list[UUID]) -> None:
         """Update last_accessed_at and boost relevance for accessed memories.
 
+        Performs a single batched UPDATE for all memory IDs using SQL LEAST function
+        to cap relevance at 1.0. This avoids N+1 queries.
+
         Args:
             memory_ids: List of memory IDs that were accessed.
         """
         if not memory_ids:
             return
 
-        now = datetime.now(UTC)
+        from sqlalchemy import func
 
-        # Update last_accessed_at and boost relevance (capped at 1.0)
+        # Single UPDATE for all IDs with proper relevance capping
+        # LEAST ensures relevance never exceeds 1.0
         stmt = (
             update(AgentMemory)
             .where(AgentMemory.id.in_(memory_ids))
             .values(
-                last_accessed_at=now,
-                relevance_score=AgentMemory.relevance_score + 0.1,
-            )
-        )
-
-        # Cap relevance at 1.0 using CASE WHEN
-        from sqlalchemy import case
-
-        stmt = (
-            update(AgentMemory)
-            .where(AgentMemory.id.in_(memory_ids))
-            .values(
-                last_accessed_at=now,
-                relevance_score=case(
-                    (AgentMemory.relevance_score + 0.1 > 1.0, 1.0),
-                    else_=AgentMemory.relevance_score + 0.1,
-                ),
+                last_accessed_at=func.now(),
+                relevance_score=func.least(AgentMemory.relevance_score + 0.1, 1.0),
             )
         )
 

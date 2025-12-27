@@ -66,6 +66,56 @@ class TestAgentMemoryMapping:
         assert MemoryType.KEY_INSIGHT not in result
         assert MemoryType.CONVERSATION_SUMMARY not in result
 
+    def test_get_memory_types_for_backend_system_architect(self):
+        """Test backend-system-architect gets KEY_INSIGHT and LEARNED_FACT."""
+        result = get_memory_types_for_agent("backend-system-architect")
+
+        assert result is not None
+        assert MemoryType.KEY_INSIGHT in result
+        assert MemoryType.LEARNED_FACT in result
+        assert MemoryType.USER_PREFERENCE not in result
+        assert MemoryType.CONVERSATION_SUMMARY not in result
+
+    def test_get_memory_types_for_frontend_ui_developer(self):
+        """Test frontend-ui-developer gets USER_PREFERENCE and KEY_INSIGHT."""
+        result = get_memory_types_for_agent("frontend-ui-developer")
+
+        assert result is not None
+        assert MemoryType.USER_PREFERENCE in result
+        assert MemoryType.KEY_INSIGHT in result
+        assert MemoryType.LEARNED_FACT not in result
+        assert MemoryType.CONVERSATION_SUMMARY not in result
+
+    def test_get_memory_types_for_ai_ml_engineer(self):
+        """Test ai-ml-engineer gets KEY_INSIGHT and LEARNED_FACT."""
+        result = get_memory_types_for_agent("ai-ml-engineer")
+
+        assert result is not None
+        assert MemoryType.KEY_INSIGHT in result
+        assert MemoryType.LEARNED_FACT in result
+        assert MemoryType.USER_PREFERENCE not in result
+        assert MemoryType.CONVERSATION_SUMMARY not in result
+
+    def test_get_memory_types_for_code_quality_reviewer(self):
+        """Test code-quality-reviewer gets KEY_INSIGHT and LEARNED_FACT."""
+        result = get_memory_types_for_agent("code-quality-reviewer")
+
+        assert result is not None
+        assert MemoryType.KEY_INSIGHT in result
+        assert MemoryType.LEARNED_FACT in result
+        assert MemoryType.USER_PREFERENCE not in result
+        assert MemoryType.CONVERSATION_SUMMARY not in result
+
+    def test_get_memory_types_for_product_manager(self):
+        """Test product-manager gets USER_PREFERENCE and CONVERSATION_SUMMARY."""
+        result = get_memory_types_for_agent("product-manager")
+
+        assert result is not None
+        assert MemoryType.USER_PREFERENCE in result
+        assert MemoryType.CONVERSATION_SUMMARY in result
+        assert MemoryType.KEY_INSIGHT not in result
+        assert MemoryType.LEARNED_FACT not in result
+
     def test_get_memory_types_for_unknown_agent_returns_none(self):
         """Test unknown agent returns None (uses all types)."""
         result = get_memory_types_for_agent("unknown_agent_xyz")
@@ -111,6 +161,11 @@ class TestAgentMemoryMapping:
             ("code_review", 2),
             ("analysis", 2),
             ("tutor", 2),
+            ("backend-system-architect", 2),
+            ("frontend-ui-developer", 2),
+            ("ai-ml-engineer", 2),
+            ("code-quality-reviewer", 2),
+            ("product-manager", 2),
         ],
     )
     def test_agent_memory_counts(self, agent_type, expected_count):
