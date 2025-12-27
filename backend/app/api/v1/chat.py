@@ -15,6 +15,7 @@ from app.middleware.rate_limit import limiter
 from app.shared.services.cache.redis_service import get_chat_history
 from app.shared.services.memory.embedding_service import get_embedding_service
 from app.shared.services.memory.memory_service import MemoryService
+from app.shared.services.stats.usage_stats import get_usage_stats
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 logger = get_logger(__name__)
@@ -125,6 +126,21 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:  # noqa: AR
         except TimeoutError:
             logger.warning("save_history_timeout", conversation_id=conversation_id)
             # Continue - don't fail the request if we can't save history
+
+        # 5. TRACK USAGE STATS (non-blocking)
+        try:
+            stats = get_usage_stats()
+            # Rough token estimate: ~1.3 tokens per word
+            tokens_in = int(len(body.message.split()) * 1.3)
+            tokens_out = int(len(response_text.split()) * 1.3)
+            await stats.track_chat(
+                conversation_id=conversation_id,
+                tokens_in=tokens_in,
+                tokens_out=tokens_out,
+            )
+        except Exception as e:
+            # Don't fail request if stats tracking fails
+            logger.debug("stats_tracking_failed", error=str(e))
 
         logger.info(
             "chat_completed",
@@ -250,6 +266,21 @@ async def chat_stream(request: Request, body: ChatRequest):  # noqa: ARG001
                         AIMessage(content=full_response),
                     ]
                 )
+
+                # 4. TRACK USAGE STATS (non-blocking)
+                try:
+                    stats = get_usage_stats()
+                    # Rough token estimate: ~1.3 tokens per word
+                    tokens_in = int(len(body.message.split()) * 1.3)
+                    tokens_out = int(len(full_response.split()) * 1.3)
+                    await stats.track_chat(
+                        conversation_id=conversation_id,
+                        tokens_in=tokens_in,
+                        tokens_out=tokens_out,
+                    )
+                except Exception as e:
+                    # Don't fail stream if stats tracking fails
+                    logger.debug("stats_tracking_failed", error=str(e))
 
                 logger.info(
                     "chat_stream_completed",

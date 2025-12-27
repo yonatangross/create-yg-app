@@ -91,6 +91,9 @@ class Settings(BaseSettings):
     LANGFUSE_PUBLIC_KEY: str | None = Field(default=None)
     LANGFUSE_SECRET_KEY: str | None = Field(default=None)
 
+    # Admin API
+    ADMIN_API_KEY: str = Field(default="dev-admin-key", description="Admin API key")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

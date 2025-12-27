@@ -1,4 +1,4 @@
-.PHONY: dev dev-build down logs test test-unit test-integration coverage e2e lint format typecheck migrate ci clean
+.PHONY: dev dev-build down logs test test-unit test-integration coverage e2e lint format typecheck migrate ci clean clear-cache clear-memories stats memory-stats cache-stats db-shell redis-shell test-file quality
 
 # =============================================================================
 # YG Starter - Development Commands
@@ -112,3 +112,58 @@ clean:
 	find . -type d -name .pytest_cache -exec rm -rf {} +
 	find . -type d -name node_modules -exec rm -rf {} +
 	find . -type d -name dist -exec rm -rf {} +
+
+# =============================================================================
+# Admin & Maintenance Commands
+# =============================================================================
+
+## Clear Redis cache (embeddings, artifacts)
+clear-cache:
+	@echo "Clearing Redis cache..."
+	docker compose exec redis redis-cli KEYS "embed:*" | xargs -r docker compose exec redis redis-cli DEL
+	docker compose exec redis redis-cli KEYS "artifact:*" | xargs -r docker compose exec redis redis-cli DEL
+	@echo "Cache cleared!"
+
+## Clear all memories from database
+clear-memories:
+	@echo "Clearing all memories..."
+	docker compose exec backend uv run python -c "\
+from app.db.session import engine;\
+from sqlalchemy import text;\
+import asyncio;\
+async def clear():\
+    async with engine.begin() as conn:\
+        await conn.execute(text('TRUNCATE agent_memories CASCADE'));\
+        print('Memories cleared!');\
+asyncio.run(clear())\
+"
+
+## Show usage statistics
+stats:
+	@curl -s http://localhost:8600/api/v1/admin/stats -H "X-Admin-Key: dev-admin-key" | python -m json.tool
+
+## Show memory statistics
+memory-stats:
+	@curl -s http://localhost:8600/api/v1/admin/memories/stats -H "X-Admin-Key: dev-admin-key" | python -m json.tool
+
+## Show cache statistics
+cache-stats:
+	@curl -s http://localhost:8600/api/v1/admin/cache/stats -H "X-Admin-Key: dev-admin-key" | python -m json.tool
+
+## Open PostgreSQL shell
+db-shell:
+	docker compose exec postgres psql -U postgres -d yg_starter
+
+## Open Redis shell
+redis-shell:
+	docker compose exec redis redis-cli
+
+## Run a single test file
+test-file:
+	cd backend && uv run pytest $(FILE) -v
+
+## Check all code quality
+quality:
+	cd backend && uv run ruff format --check app/ tests/
+	cd backend && uv run ruff check app/ tests/
+	cd backend && uv run pytest tests/ -q

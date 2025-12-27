@@ -13,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
-from app.api.v1 import chat, health
+from app.api.v1 import admin, chat, health
 from app.core.config import settings
 from app.core.logging import get_logger, setup_logging
 from app.middleware.rate_limit import limiter
@@ -133,6 +133,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Register routers
 app.include_router(health.router, prefix=settings.API_V1_PREFIX)
 app.include_router(chat.router, prefix=settings.API_V1_PREFIX)
+app.include_router(admin.router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/")

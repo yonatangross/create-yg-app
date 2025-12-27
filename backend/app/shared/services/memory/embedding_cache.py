@@ -136,7 +136,20 @@ class EmbeddingCache:
             )
         """
         cached = await self.get(text)
+
         if cached is not None:
+            # Track cache hit
+            try:
+                from app.shared.services.stats.usage_stats import get_usage_stats
+
+                stats = get_usage_stats()
+                # Rough estimate: ~1.3 tokens per word
+                tokens = int(len(text.split()) * 1.3)
+                await stats.track_embedding(tokens=tokens, cached=True)
+            except Exception as e:
+                # Don't fail on stats tracking error
+                logger.debug("embedding_stats_tracking_failed", error=str(e))
+
             return cached
 
         # Cache miss - generate embedding
@@ -145,6 +158,17 @@ class EmbeddingCache:
 
         # Store in cache for next time
         await self.set(text, embedding)
+
+        # Track cache miss (new embedding generated)
+        try:
+            from app.shared.services.stats.usage_stats import get_usage_stats
+
+            stats = get_usage_stats()
+            tokens = int(len(text.split()) * 1.3)
+            await stats.track_embedding(tokens=tokens, cached=False)
+        except Exception as e:
+            # Don't fail on stats tracking error
+            logger.debug("embedding_stats_tracking_failed", error=str(e))
 
         return embedding
 
