@@ -1,9 +1,10 @@
 """Context management services.
 
-Provides token counting and context window management utilities.
+Provides token counting, context compilation, and context window management utilities.
 """
 
 from .compaction import CompactionConfig, CompiledContext, SessionCompactor
+from .compiler import CompilerResult, ContextCompiler
 from .token_counter import (
     count_message_tokens,
     count_messages_tokens,
@@ -13,9 +14,14 @@ from .token_counter import (
 )
 
 __all__ = [
+    # Compaction
     "CompactionConfig",
     "CompiledContext",
     "SessionCompactor",
+    # Compilation
+    "CompilerResult",
+    "ContextCompiler",
+    # Token counting
     "count_tokens",
     "count_message_tokens",
     "count_messages_tokens",

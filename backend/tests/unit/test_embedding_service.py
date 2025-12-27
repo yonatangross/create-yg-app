@@ -4,6 +4,8 @@ import math
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from openai import APIError, APITimeoutError, AuthenticationError, BadRequestError, RateLimitError
+from tenacity import RetryError
 
 from app.shared.services.memory.embedding_service import (
     EmbeddingService,
@@ -188,6 +190,164 @@ class TestEmbeddingService:
         for embedding in result:
             magnitude = math.sqrt(sum(x * x for x in embedding))
             assert abs(magnitude - 1.0) < 1e-6
+
+
+class TestEmbeddingServiceRetry:
+    """Tests for retry logic with exponential backoff."""
+
+    @pytest.fixture
+    def embedding_service(self):
+        """Create EmbeddingService with mocked client."""
+        with patch("app.shared.services.memory.embedding_service.settings") as mock_settings:
+            mock_settings.OPENAI_API_KEY = "test-key"
+            service = EmbeddingService()
+            service.client = MagicMock()
+            return service
+
+    @pytest.mark.asyncio
+    async def test_retry_on_rate_limit_then_success(self, embedding_service):
+        """Test successful retry after RateLimitError."""
+        mock_response = MagicMock()
+        mock_response.data = [MagicMock(embedding=[0.5] * 1536)]
+        mock_response.usage.total_tokens = 10
+
+        # First call raises RateLimitError, second succeeds
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=[
+                RateLimitError("Rate limit exceeded", response=MagicMock(), body=None),
+                mock_response,
+            ]
+        )
+
+        result = await embedding_service.generate_embedding("Test text")
+
+        # Should succeed after retry
+        assert len(result) == 1536
+        assert embedding_service.client.embeddings.create.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_retry_on_api_error_then_success(self, embedding_service):
+        """Test successful retry after APIError."""
+        mock_response = MagicMock()
+        mock_response.data = [MagicMock(embedding=[0.5] * 1536)]
+        mock_response.usage.total_tokens = 10
+
+        # First call raises APIError, second succeeds
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=[
+                APIError("API error", request=MagicMock(), body=None),
+                mock_response,
+            ]
+        )
+
+        result = await embedding_service.generate_embedding("Test text")
+
+        assert len(result) == 1536
+        assert embedding_service.client.embeddings.create.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_retry_on_timeout_then_success(self, embedding_service):
+        """Test successful retry after APITimeoutError."""
+        mock_response = MagicMock()
+        mock_response.data = [MagicMock(embedding=[0.5] * 1536)]
+        mock_response.usage.total_tokens = 10
+
+        # First call raises APITimeoutError, second succeeds
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=[
+                APITimeoutError(request=MagicMock()),
+                mock_response,
+            ]
+        )
+
+        result = await embedding_service.generate_embedding("Test text")
+
+        assert len(result) == 1536
+        assert embedding_service.client.embeddings.create.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_max_retries_exceeded(self, embedding_service):
+        """Test that max retries (3) is respected."""
+        # All calls raise RateLimitError
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=RateLimitError("Rate limit exceeded", response=MagicMock(), body=None)
+        )
+
+        with pytest.raises((RateLimitError, RetryError)):
+            await embedding_service.generate_embedding("Test text")
+
+        # Should attempt 3 times (initial + 2 retries)
+        assert embedding_service.client.embeddings.create.call_count == 3
+
+    @pytest.mark.asyncio
+    async def test_no_retry_on_authentication_error(self, embedding_service):
+        """Test that AuthenticationError is not retried."""
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=AuthenticationError("Invalid API key", response=MagicMock(), body=None)
+        )
+
+        with pytest.raises(AuthenticationError):
+            await embedding_service.generate_embedding("Test text")
+
+        # Should fail immediately without retry
+        assert embedding_service.client.embeddings.create.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_no_retry_on_bad_request_error(self, embedding_service):
+        """Test that BadRequestError is not retried."""
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=BadRequestError("Invalid request", response=MagicMock(), body=None)
+        )
+
+        with pytest.raises(BadRequestError):
+            await embedding_service.generate_embedding("Test text")
+
+        # Should fail immediately without retry
+        assert embedding_service.client.embeddings.create.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_retry_multiple_failures_then_success(self, embedding_service):
+        """Test retry after multiple transient failures."""
+        mock_response = MagicMock()
+        mock_response.data = [MagicMock(embedding=[0.5] * 1536)]
+        mock_response.usage.total_tokens = 10
+
+        # Two failures, then success
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=[
+                RateLimitError("Rate limit", response=MagicMock(), body=None),
+                APITimeoutError(request=MagicMock()),
+                mock_response,
+            ]
+        )
+
+        result = await embedding_service.generate_embedding("Test text")
+
+        assert len(result) == 1536
+        assert embedding_service.client.embeddings.create.call_count == 3
+
+    @pytest.mark.asyncio
+    async def test_batch_retry_on_rate_limit(self, embedding_service):
+        """Test batch embedding retry logic."""
+        mock_response = MagicMock()
+        mock_response.data = [
+            MagicMock(embedding=[0.5] * 1536),
+            MagicMock(embedding=[0.3] * 1536),
+        ]
+
+        # First call raises RateLimitError, second succeeds
+        embedding_service.client.embeddings.create = AsyncMock(
+            side_effect=[
+                RateLimitError("Rate limit exceeded", response=MagicMock(), body=None),
+                mock_response,
+            ]
+        )
+
+        texts = ["First text", "Second text"]
+        result = await embedding_service.generate_embeddings_batch(texts)
+
+        assert len(result) == 2
+        assert embedding_service.client.embeddings.create.call_count == 2
 
 
 class TestGetEmbeddingService:

@@ -52,6 +52,47 @@ class CompiledContext:
         compiled = len(self.prefix) + len(self.messages)
         return self.original_count / max(compiled, 1)
 
+    def to_messages_with_cache(self) -> list[BaseMessage]:
+        """Convert to messages with Anthropic prompt caching headers.
+
+        Anthropic's prompt caching allows caching of static prefix content
+        (system prompts, summaries) to save costs and reduce latency.
+
+        Cost savings:
+        - Cached content: 90% cheaper on subsequent requests
+        - Cache duration: 5 minutes
+        - Minimum cache size: 1024 tokens
+
+        The last message in the prefix gets a cache_control header,
+        marking everything up to that point as cacheable.
+
+        Returns:
+            List of messages with cache_control headers on prefix
+
+        Reference:
+            https://docs.anthropic.com/claude/docs/prompt-caching
+        """
+        result: list[BaseMessage] = []
+
+        # Add prefix messages with cache marker on the last one
+        if self.prefix:
+            for i, msg in enumerate(self.prefix):
+                is_last_prefix = i == len(self.prefix) - 1
+                if is_last_prefix:
+                    # Mark last prefix message for caching (deep copy to avoid mutation)
+                    cached_msg = msg.copy(deep=True)
+                    if not hasattr(cached_msg, "additional_kwargs"):
+                        cached_msg.additional_kwargs = {}
+                    cached_msg.additional_kwargs["cache_control"] = {"type": "ephemeral"}
+                    result.append(cached_msg)
+                else:
+                    result.append(msg)
+
+        # Add dynamic messages (not cached)
+        result.extend(self.messages)
+
+        return result
+
 
 class SessionCompactor:
     """Compact conversation history with LLM summarization."""

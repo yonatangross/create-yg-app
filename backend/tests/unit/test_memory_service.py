@@ -78,7 +78,10 @@ class TestMemoryService:
 
     @pytest.mark.asyncio
     async def test_search_returns_results_with_similarity(
-        self, memory_service, mock_session, mock_embedding_service  # noqa: ARG002
+        self,
+        memory_service,
+        mock_session,
+        mock_embedding_service,  # noqa: ARG002
     ):
         """Test search returns MemorySearchResult with similarity scores."""
         # Setup mock query result
@@ -113,7 +116,10 @@ class TestMemoryService:
 
     @pytest.mark.asyncio
     async def test_search_filters_by_memory_type(
-        self, memory_service, mock_session, mock_embedding_service  # noqa: ARG002
+        self,
+        memory_service,
+        mock_session,
+        mock_embedding_service,  # noqa: ARG002
     ):
         """Test search can filter by memory type."""
         mock_session.execute.return_value = MagicMock(all=MagicMock(return_value=[]))
@@ -128,7 +134,10 @@ class TestMemoryService:
 
     @pytest.mark.asyncio
     async def test_proactive_recall_returns_formatted_context(
-        self, memory_service, mock_session, mock_embedding_service  # noqa: ARG002
+        self,
+        memory_service,
+        mock_session,
+        mock_embedding_service,  # noqa: ARG002
     ):
         """Test proactive recall returns formatted memory context."""
         # Setup mock search results
@@ -148,7 +157,10 @@ class TestMemoryService:
 
     @pytest.mark.asyncio
     async def test_proactive_recall_empty_when_no_matches(
-        self, memory_service, mock_session, mock_embedding_service  # noqa: ARG002
+        self,
+        memory_service,
+        mock_session,
+        mock_embedding_service,  # noqa: ARG002
     ):
         """Test proactive recall returns empty string when no matches."""
         mock_session.execute.return_value = MagicMock(all=MagicMock(return_value=[]))

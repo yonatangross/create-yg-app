@@ -1,15 +1,53 @@
 """Embedding generation service using OpenAI text-embedding-3-small."""
 
+import logging
 import math
 from functools import lru_cache
 
 import tiktoken
-from openai import AsyncOpenAI
+from openai import (
+    APIError,
+    APITimeoutError,
+    AsyncOpenAI,
+    AuthenticationError,
+    BadRequestError,
+    RateLimitError,
+)
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from app.core.config import settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
+# Get standard logger for tenacity's before_sleep_log (it doesn't support structlog)
+_stdlib_logger = logging.getLogger(__name__)
+
+
+# Custom retry condition: only retry transient errors
+def _should_retry_on_exception(exception: BaseException) -> bool:
+    """Determine if an exception should trigger a retry.
+
+    Only retry on transient errors (rate limits, timeouts, general API errors).
+    Do NOT retry on permanent errors (auth failures, invalid requests).
+
+    Args:
+        exception: The exception that was raised.
+
+    Returns:
+        True if the exception should trigger a retry, False otherwise.
+    """
+    # Don't retry auth or validation errors (these won't fix themselves)
+    if isinstance(exception, (AuthenticationError, BadRequestError)):
+        return False
+    # Retry transient errors
+    return isinstance(exception, (RateLimitError, APITimeoutError, APIError))
+
 
 # Type alias for embedding vectors
 EmbeddingVector = list[float]
@@ -84,8 +122,17 @@ class EmbeddingService:
             return text
         return self.encoding.decode(tokens[:max_tokens])
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2, min=1, max=32),
+        retry=retry_if_exception(_should_retry_on_exception),
+        before_sleep=before_sleep_log(_stdlib_logger, logging.WARNING),
+    )
     async def generate_embedding(self, text: str) -> EmbeddingVector:
         """Generate a 1536-dimensional L2-normalized embedding vector.
+
+        Retries up to 3 times with exponential backoff (1s -> 2s -> 4s -> 8s -> 16s -> 32s)
+        on transient errors (RateLimitError, APIError, APITimeoutError).
 
         Args:
             text: The input text to embed. Truncated to MAX_TOKENS (8000) tokens.
@@ -95,7 +142,11 @@ class EmbeddingService:
 
         Raises:
             ValueError: If text is empty.
-            OpenAIError: If the API call fails.
+            RateLimitError: If rate limit exceeded after retries.
+            APIError: If API error persists after retries.
+            APITimeoutError: If timeout persists after retries.
+            AuthenticationError: If API key is invalid (no retry).
+            BadRequestError: If request is malformed (no retry).
         """
         if not text or not text.strip():
             msg = "Cannot generate embedding for empty text"
@@ -139,6 +190,12 @@ class EmbeddingService:
 
         return normalized_embedding
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=2, min=1, max=32),
+        retry=retry_if_exception(_should_retry_on_exception),
+        before_sleep=before_sleep_log(_stdlib_logger, logging.WARNING),
+    )
     async def generate_embeddings_batch(
         self,
         texts: list[str],
@@ -146,7 +203,8 @@ class EmbeddingService:
     ) -> list[EmbeddingVector]:
         """Generate L2-normalized embeddings for multiple texts.
 
-        Processes texts in batches for efficiency.
+        Processes texts in batches for efficiency. Retries up to 3 times with
+        exponential backoff on transient errors (RateLimitError, APIError, APITimeoutError).
 
         Args:
             texts: List of texts to embed.
@@ -154,6 +212,11 @@ class EmbeddingService:
 
         Returns:
             List of L2-normalized embedding vectors in the same order as input.
+
+        Raises:
+            RateLimitError: If rate limit exceeded after retries.
+            APIError: If API error persists after retries.
+            APITimeoutError: If timeout persists after retries.
         """
         if not texts:
             return []
