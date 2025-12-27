@@ -1,6 +1,7 @@
 """Chat endpoint with SSE streaming."""
 
 import asyncio
+import json
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Request
@@ -31,11 +32,54 @@ class ChatRequest(BaseModel):
     conversation_id: str | None = Field(default=None)
 
 
+class MemoryItem(BaseModel):
+    """Memory item from proactive recall."""
+
+    type: str
+    content: str
+
+
 class ChatResponse(BaseModel):
     """Response body for non-streaming chat."""
 
     response: str
     conversation_id: str
+    memories: list[MemoryItem] = Field(default_factory=list)
+    memory_count: int = 0
+
+
+def parse_proactive_context(proactive_context: str) -> list[MemoryItem]:
+    """Parse proactive context string into structured memory items.
+
+    Expected format:
+    1. [Type] Content
+    2. [Type] Content
+
+    Args:
+        proactive_context: Formatted context string from memory service
+
+    Returns:
+        List of MemoryItem objects
+    """
+    memory_items: list[MemoryItem] = []
+    if not proactive_context:
+        return memory_items
+
+    for line in proactive_context.split("\n"):
+        line = line.strip()
+        # Extract type and content from format: "1. [Type] Content"
+        if line and not line.startswith("#") and ". [" in line:
+            try:
+                type_start = line.index("[") + 1
+                type_end = line.index("]")
+                memory_type = line[type_start:type_end]
+                content = line[type_end + 1 :].strip()
+                memory_items.append(MemoryItem(type=memory_type, content=content))
+            except ValueError:
+                # If parsing fails, use the whole line as context
+                memory_items.append(MemoryItem(type="context", content=line))
+
+    return memory_items
 
 
 @router.post("")
@@ -142,17 +186,23 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:  # noqa: AR
             # Don't fail request if stats tracking fails
             logger.debug("stats_tracking_failed", error=str(e))
 
+        # Parse memory context
+        memory_items = parse_proactive_context(proactive_context)
+
         logger.info(
             "chat_completed",
             conversation_id=conversation_id,
             message_length=len(body.message),
             response_length=len(response_text),
             has_proactive_context=bool(proactive_context),
+            memory_count=len(memory_items),
         )
 
         return ChatResponse(
             response=response_text,
             conversation_id=conversation_id,
+            memories=memory_items,
+            memory_count=len(memory_items),
         )
 
     except Exception as e:
@@ -223,6 +273,21 @@ async def chat_stream(request: Request, body: ChatRequest):  # noqa: ARG001
     async def event_generator() -> AsyncGenerator[dict, None]:
         agent = get_agent()
         accumulated_response = []
+
+        # Send memory context event FIRST (before tokens)
+        if proactive_context:
+            memory_items = parse_proactive_context(proactive_context)
+            yield {
+                "event": "context",
+                "data": json.dumps(
+                    {
+                        "memory_context": {
+                            "memories": [item.model_dump() for item in memory_items],
+                            "count": len(memory_items),
+                        }
+                    }
+                ),
+            }
 
         try:
             async for event in agent.astream_events(
