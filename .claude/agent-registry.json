@@ -1,0 +1,240 @@
+{
+  "$schema": "./schemas/agent-registry.schema.json",
+  "version": "2.0.0",
+  "description": "Agent and skill registry for YG Starter - AI-powered full-stack development",
+  "last_updated": "2025-12-27",
+
+  "discovery": {
+    "protocol": "semantic",
+    "fallback": "keyword",
+    "confidence_threshold": 0.7,
+    "max_agents_per_task": 3
+  },
+
+  "agents": {
+    "backend-system-architect": {
+      "display_name": "Backend System Architect",
+      "color": "yellow",
+      "path": "agents/backend-system-architect.md",
+      "model_preference": {
+        "design": "sonnet",
+        "simple_queries": "haiku",
+        "complex_analysis": "opus"
+      },
+      "capabilities": [
+        "api-design",
+        "database-schema",
+        "authentication",
+        "rate-limiting",
+        "rest-api",
+        "caching"
+      ],
+      "skills_used": [
+        "api-design-framework",
+        "database-schema-designer",
+        "security-checklist",
+        "streaming-api-patterns",
+        "resilience-patterns",
+        "github-cli"
+      ],
+      "handoff_to": ["code-quality-reviewer", "frontend-ui-developer"]
+    },
+
+    "frontend-ui-developer": {
+      "display_name": "Frontend UI Developer",
+      "color": "purple",
+      "path": "agents/frontend-ui-developer.md",
+      "model_preference": {
+        "components": "sonnet",
+        "simple_styling": "haiku"
+      },
+      "capabilities": [
+        "react-components",
+        "typescript-frontend",
+        "state-management",
+        "responsive-design",
+        "hooks",
+        "forms"
+      ],
+      "skills_used": [
+        "testing-strategy-builder",
+        "performance-optimization",
+        "security-checklist"
+      ],
+      "handoff_to": ["code-quality-reviewer"]
+    },
+
+    "ai-ml-engineer": {
+      "display_name": "AI/ML Engineer",
+      "color": "orange",
+      "path": "agents/ai-ml-engineer.md",
+      "model_preference": {
+        "prompt_engineering": "opus",
+        "integration": "sonnet",
+        "simple_queries": "haiku"
+      },
+      "capabilities": [
+        "llm-integration",
+        "prompt-engineering",
+        "rag-pipelines",
+        "embeddings",
+        "vector-search",
+        "langchain",
+        "langgraph"
+      ],
+      "skills_used": [
+        "langgraph-workflows",
+        "langfuse-observability",
+        "streaming-api-patterns",
+        "pgvector-search",
+        "resilience-patterns"
+      ],
+      "handoff_to": ["backend-system-architect", "code-quality-reviewer"]
+    },
+
+    "code-quality-reviewer": {
+      "display_name": "Code Quality Reviewer",
+      "color": "green",
+      "path": "agents/code-quality-reviewer.md",
+      "model_preference": {
+        "review": "sonnet",
+        "quick_checks": "haiku"
+      },
+      "capabilities": [
+        "code-review",
+        "testing",
+        "security-review",
+        "documentation"
+      ],
+      "skills_used": [
+        "code-review-playbook",
+        "testing-strategy-builder",
+        "security-checklist",
+        "github-cli"
+      ],
+      "handoff_to": []
+    },
+
+    "product-manager": {
+      "display_name": "Product Manager",
+      "color": "blue",
+      "path": "agents/product-manager.md",
+      "model_preference": {
+        "planning": "sonnet",
+        "quick_decisions": "haiku"
+      },
+      "capabilities": [
+        "requirements",
+        "prioritization",
+        "user-stories",
+        "roadmap"
+      ],
+      "skills_used": ["github-cli"],
+      "handoff_to": ["backend-system-architect", "frontend-ui-developer"]
+    },
+
+    "rapid-ui-designer": {
+      "display_name": "Rapid UI Designer",
+      "color": "pink",
+      "path": "agents/rapid-ui-designer.md",
+      "model_preference": {
+        "design": "sonnet"
+      },
+      "capabilities": [
+        "ui-design",
+        "prototyping",
+        "wireframes"
+      ],
+      "skills_used": ["performance-optimization"],
+      "handoff_to": ["frontend-ui-developer"]
+    },
+
+    "sprint-prioritizer": {
+      "display_name": "Sprint Prioritizer",
+      "color": "cyan",
+      "path": "agents/sprint-prioritizer.md",
+      "model_preference": {
+        "planning": "sonnet"
+      },
+      "capabilities": [
+        "sprint-planning",
+        "backlog-grooming",
+        "estimation"
+      ],
+      "skills_used": ["github-cli"],
+      "handoff_to": ["product-manager"]
+    },
+
+    "ux-researcher": {
+      "display_name": "UX Researcher",
+      "color": "teal",
+      "path": "agents/ux-researcher.md",
+      "model_preference": {
+        "research": "sonnet"
+      },
+      "capabilities": [
+        "user-research",
+        "usability-testing",
+        "persona-development"
+      ],
+      "skills_used": [],
+      "handoff_to": ["rapid-ui-designer", "product-manager"]
+    },
+
+    "whimsy-injector": {
+      "display_name": "Whimsy Injector",
+      "color": "magenta",
+      "path": "agents/whimsy-injector.md",
+      "model_preference": {
+        "creative": "opus"
+      },
+      "capabilities": [
+        "creative-writing",
+        "microcopy",
+        "easter-eggs"
+      ],
+      "skills_used": [],
+      "handoff_to": ["frontend-ui-developer"]
+    }
+  },
+
+  "skills": {
+    "categories": {
+      "backend": {
+        "display_name": "Backend Development",
+        "skills": [
+          "api-design-framework",
+          "database-schema-designer",
+          "streaming-api-patterns",
+          "resilience-patterns"
+        ]
+      },
+      "ai-ml": {
+        "display_name": "AI/ML & LLM",
+        "skills": [
+          "langgraph-workflows",
+          "langfuse-observability",
+          "pgvector-search"
+        ]
+      },
+      "quality": {
+        "display_name": "Quality & Security",
+        "skills": [
+          "code-review-playbook",
+          "testing-strategy-builder",
+          "security-checklist",
+          "performance-optimization"
+        ]
+      },
+      "devops": {
+        "display_name": "DevOps & Workflow",
+        "skills": ["github-cli"]
+      }
+    }
+  },
+
+  "loading": {
+    "strategy": "progressive",
+    "priority_order": ["backend", "ai-ml", "quality", "devops"]
+  }
+}
