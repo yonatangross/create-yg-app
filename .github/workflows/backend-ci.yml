@@ -1,0 +1,153 @@
+# =============================================================================
+# Backend CI - YG Starter
+# =============================================================================
+# Runs lint, type-check, and tests on Python backend using uv + ruff + ty
+# =============================================================================
+
+name: Backend CI
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main, dev]
+    # NOTE: Using dorny/paths-filter instead of paths due to GitHub Actions bug
+    # where large PRs silently skip path-filtered workflows
+  workflow_dispatch:
+
+permissions:
+  pull-requests: read
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ===========================================================================
+  # Phase 0: Detect changes (workaround for GitHub Actions paths filter bug)
+  # ===========================================================================
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/backend-ci.yml'
+
+  # ===========================================================================
+  # Phase 1: FAST GATES (30-60 sec) - Fail fast on code quality issues
+  # ===========================================================================
+  lint:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: 'backend/pyproject.toml'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: uv sync --frozen --no-install-project
+
+      - name: Run ruff linting
+        working-directory: ./backend
+        run: uv run ruff check app/
+
+      - name: Check ruff formatting
+        working-directory: ./backend
+        run: uv run ruff format --check app/
+
+  type-check:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: 'backend/pyproject.toml'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: uv sync --frozen --no-install-project
+
+      - name: Run ty type check
+        working-directory: ./backend
+        run: uv run ty check app/
+
+  # ===========================================================================
+  # Phase 2: UNIT TESTS (2-3 min) - Only run if lint/type pass
+  # ===========================================================================
+  test:
+    needs: [changes, lint, type-check]
+    if: ${{ needs.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: 'backend/pyproject.toml'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: uv sync --frozen
+
+      - name: Run tests with coverage
+        working-directory: ./backend
+        run: uv run pytest tests/ --cov=app --cov-report=xml --cov-report=term -v
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./backend/coverage.xml
+          flags: backend
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-reports
+          path: backend/coverage.xml
+          retention-days: 7
+          if-no-files-found: warn
