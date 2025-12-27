@@ -98,6 +98,32 @@ class MemoryService:
         self.session = session
         self.embedding_service = embedding_service or get_embedding_service()
 
+    def _build_contextual_text(
+        self, content: str, memory_type: MemoryType | None = None
+    ) -> str:
+        """Build contextual text for embedding generation.
+
+        Prepends type-specific context to improve semantic similarity.
+        Based on Anthropic's Contextual Retrieval research (35% improvement).
+
+        Args:
+            content: The text content to embed.
+            memory_type: Optional memory type for context prefix.
+
+        Returns:
+            Content with contextual prefix.
+        """
+        context_prefixes = {
+            MemoryType.CONVERSATION_SUMMARY: "Summary of past conversation:",
+            MemoryType.USER_PREFERENCE: "User preference or personal information:",
+            MemoryType.LEARNED_FACT: "Fact learned from the user:",
+            MemoryType.KEY_INSIGHT: "Key insight or important realization:",
+        }
+
+        if memory_type and memory_type in context_prefixes:
+            return f"{context_prefixes[memory_type]}\n\n{content}"
+        return content
+
     async def store(
         self,
         content: str,
@@ -125,8 +151,9 @@ class MemoryService:
             conversation_id=conversation_id,
         )
 
-        # Generate embedding
-        embedding = await self.embedding_service.generate_embedding(content)
+        # Generate embedding with contextual prefix for better semantic similarity
+        contextual_text = self._build_contextual_text(content, memory_type)
+        embedding = await self.embedding_service.generate_embedding(contextual_text)
 
         # Create memory record
         memory = AgentMemory(
@@ -187,8 +214,9 @@ class MemoryService:
         # Set query timeout for vector search (critical query)
         await set_statement_timeout(self.session, settings.DATABASE_QUERY_TIMEOUT)
 
-        # Generate query embedding
-        query_embedding = await self.embedding_service.generate_embedding(query)
+        # Generate query embedding with contextual prefix if memory_type specified
+        contextual_query = self._build_contextual_text(query, memory_type)
+        query_embedding = await self.embedding_service.generate_embedding(contextual_query)
         max_distance = 1.0 - threshold
 
         # Build query with cosine distance
