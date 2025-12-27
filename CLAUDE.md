@@ -1,137 +1,241 @@
-# YG Starter
+---
+name: yg-starter
+description: Production-ready AI application starter with multi-provider LLM, RAG, and full observability
+version: 1.0.0
+---
 
-> Production-ready AI application with multi-provider LLM support, RAG, and full observability.
+# YG Starter - AI Application Template
 
-## Quick Reference
+**Mode**: ⚡ Parallel Execution | **Discovery**: 🔍 Semantic Skills
 
-| Resource | Location |
-|----------|----------|
-| Backend API | `http://localhost:8600/docs` |
-| Frontend | `http://localhost:5183` |
-| Langfuse | `http://localhost:3010` |
+## 🔄 MANDATORY: New Context Window Initialization
 
-## Technology Stack
+**EVERY TIME a new conversation/context window starts, YOU MUST:**
 
-### Backend (Python 3.12)
-- **Framework**: FastAPI + Pydantic
-- **Agent**: LangGraph for multi-step workflows
-- **LLM**: Multi-provider (OpenAI, Anthropic, Google)
-- **Database**: PostgreSQL 17 + pgvector
-- **Cache**: Redis 7 (Stack)
-- **Observability**: Langfuse (self-hosted)
+1. **Read** `.claude/instructions/context-initialization.md` for the full protocol
+2. **Execute** the initialization steps before doing any work
 
-### Frontend (React 19)
-- **Build**: Vite
-- **Router**: TanStack Router
-- **Data**: TanStack Query
-- **State**: Zustand
-- **UI**: Tailwind + Radix UI
+**Quick Summary:**
+- Read `docs/CURRENT_STATUS.md` → Current progress, blockers, completed work
+- Read `docs/ARCHITECTURE.md` → Tech stack, patterns, decisions
+- Check `git log --oneline -10` and `git status` → Recent changes
+- Review `.claude/context/` → Decisions from previous sessions
 
-## Project Structure
+**Full Protocol:** `.claude/instructions/context-initialization.md`
 
+---
+
+## 📦 Project Overview
+
+**Production-ready AI application template** with multi-provider LLM support, RAG pipelines, and full observability via Langfuse.
+
+**Stack**: React 19 + FastAPI + LangGraph 1.0 + PostgreSQL/PGVector + Langfuse
+
+**Development Ports** (docker-compose.yml):
+| Service | Port | URL |
+|---------|------|-----|
+| Frontend | 5183 | `http://localhost:5183` |
+| Backend API | 8600 | `http://localhost:8600/docs` |
+| PostgreSQL | 5447 | `localhost:5447` |
+| Redis | 6390 | `localhost:6390` |
+| Langfuse | 3010 | `http://localhost:3010` |
+
+---
+
+## 🏗️ Architecture
+
+**Codebase Structure**:
 ```
 yg-starter/
-├── backend/
+├── backend/                # FastAPI + LangGraph
 │   ├── app/
-│   │   ├── api/v1/          # REST endpoints
-│   │   ├── agent/           # LangGraph workflows
-│   │   │   ├── graph.py     # Main workflow
-│   │   │   ├── state.py     # TypedDict state
-│   │   │   ├── nodes/       # Workflow nodes
-│   │   │   └── tools/       # Agent tools
-│   │   ├── llm/             # LLM providers
-│   │   │   ├── factory.py   # Multi-provider factory
-│   │   │   └── providers/   # OpenAI, Anthropic, Google
-│   │   ├── rag/             # Retrieval pipeline
-│   │   │   ├── chunking.py  # Document chunking
-│   │   │   ├── embeddings.py
-│   │   │   └── retrieval.py # Hybrid search
-│   │   ├── db/              # Database layer
-│   │   └── core/            # Configuration
-│   ├── tests/
-│   └── alembic/             # Migrations
-├── frontend/
-│   ├── src/
-│   │   ├── features/chat/   # Chat feature
-│   │   ├── components/      # UI components
-│   │   └── stores/          # Zustand stores
-│   └── e2e/                 # Playwright tests
-└── .claude/                 # AI development system
+│   │   ├── api/v1/         # REST endpoints
+│   │   ├── agent/          # LangGraph workflows
+│   │   │   ├── graph.py    # Main workflow
+│   │   │   ├── state.py    # TypedDict state
+│   │   │   └── nodes/      # Workflow nodes
+│   │   ├── llm/            # Multi-provider factory
+│   │   ├── core/           # Config, resilience
+│   │   └── middleware/     # Rate limiting
+│   └── tests/
+├── frontend/               # React 19 + Vite
+│   └── src/
+│       ├── features/       # Feature modules
+│       ├── components/     # UI components
+│       └── stores/         # Zustand state
+├── docs/                   # Documentation
+└── .claude/                # AI development system
 ```
 
-## Key Patterns
+**Key Design Decisions**:
+- Multi-provider LLM factory with automatic fallback
+- LangGraph for stateful agent workflows
+- Circuit breaker pattern for resilience
+- File-based agent communication (no APIs between agents)
+- Parallel execution via domain isolation
 
-### Multi-Provider LLM Factory
-```python
-# Auto-detects provider from available API keys
-from app.llm.factory import LLMFactory
-llm = LLMFactory.create()  # Uses first available key
+**Architecture Details:** `docs/ARCHITECTURE.md`
+
+---
+
+## 🤖 Agent System
+
+**9 specialized agents** for different development tasks:
+
+| Agent | Focus | Skills Used |
+|-------|-------|-------------|
+| `backend-system-architect` | APIs, databases, services | api-design, database-schema, security |
+| `frontend-ui-developer` | React, components, state | testing, performance |
+| `ai-ml-engineer` | LLM, RAG, LangGraph | langgraph, langfuse, pgvector |
+| `code-quality-reviewer` | Testing, security, review | code-review, testing, security |
+| `product-manager` | Requirements, roadmap | github-cli |
+| `rapid-ui-designer` | Prototyping, wireframes | performance |
+| `sprint-prioritizer` | Sprint planning | github-cli |
+| `ux-researcher` | User research | - |
+| `whimsy-injector` | Creative copy | - |
+
+**Agent Definitions:** `.claude/agents/`
+**Agent Registry:** `.claude/agent-registry.json`
+
+---
+
+## 🛠️ Skills (12 Production-Ready)
+
+**Backend:**
+- `api-design-framework` - REST/GraphQL patterns, versioning
+- `database-schema-designer` - SQLAlchemy, migrations, indexes
+- `streaming-api-patterns` - SSE, WebSockets, backpressure
+- `resilience-patterns` - Circuit breakers, retries, fallbacks
+
+**AI/ML:**
+- `langgraph-workflows` - Multi-agent orchestration, checkpointing
+- `langfuse-observability` - Tracing, evaluation, cost tracking
+- `pgvector-search` - Embeddings, hybrid search, RRF
+
+**Quality:**
+- `code-review-playbook` - Review checklists, conventional comments
+- `testing-strategy-builder` - Pytest, Vitest, coverage targets
+- `security-checklist` - OWASP, auth patterns, input validation
+- `performance-optimization` - Profiling, caching, bundle analysis
+
+**DevOps:**
+- `github-cli` - Issues, PRs, Projects v2, automation
+
+**Skills Location:** `.claude/skills/`
+
+---
+
+## ⚡ Parallel Execution Rules
+
+**CRITICAL: Follow `.claude/instructions/parallel-execution-rules.md`**
+
+**Domain Isolation:**
+- Backend agents: `backend/**` only
+- Frontend agents: `frontend/**` only
+- Never cross boundaries without explicit handoff
+
+**File Locking:**
+- One agent per file at a time
+- Use `.claude/context/` for coordination
+- Check `git status` before modifying shared files
+
+---
+
+## 📋 Code Quality Rules
+
+**CRITICAL: Follow `.claude/instructions/code-quality-rules.md`**
+
+### Python (Backend)
+```bash
+# MUST pass before commit:
+uv run ruff format --check app/
+uv run ruff check app/
+uv run ty check app/
+uv run pytest tests/ --cov=app
 ```
 
-### LangGraph State
-```python
-class AgentState(TypedDict):
-    query: str
-    messages: Annotated[list[BaseMessage], operator.add]  # Parallel-safe
-    retrieved_chunks: Annotated[list[Chunk], operator.add]
-    response: str
+### TypeScript (Frontend)
+```bash
+# MUST pass before commit:
+npm run lint
+npm run typecheck
+npm run build
 ```
 
-### Langfuse Observability
-```python
-from langfuse.decorators import observe
+### Git Workflow
+- **Never commit directly to main/dev**
+- Create feature branches: `feature/<name>` or `issue/<number>-<description>`
+- PRs require passing CI checks
+- Use conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`
 
-@observe(name="my_function")
-async def my_function():
-    # Automatically traced
-    pass
-```
+---
 
-## Development Commands
+## 🔧 Development Commands
 
 ```bash
-make dev          # Start all services
-make test         # Run all tests
-make lint         # Check code quality
-make migrate      # Run database migrations
+# Start all services
+make dev
+
+# Run tests
+make test
+
+# Lint and format
+make lint
+
+# Database migrations
+make migrate
+
+# Stop all services
+make down
 ```
 
-## Agent System
+---
 
-This project includes 5 specialized Claude Code agents:
+## 🔍 MCP Servers
 
-| Agent | Focus |
-|-------|-------|
-| backend-system-architect | REST APIs, databases, services |
-| frontend-ui-developer | React components, state, UI |
-| ai-ml-engineer | LLM integration, RAG, prompts |
-| code-quality-reviewer | Testing, security, standards |
-| studio-coach | Developer experience, tooling |
+**Core (Active):** memory, sequential-thinking, context7
 
-See `.claude/agents/` for full agent definitions.
+**Optional:** postgres, playwright, langfuse
 
-## Skills
+**Configuration:** `.mcp.json`
+**Documentation:** `.claude/instructions/mcp-servers.md`
 
-13 progressive-loading skills organized by category:
+---
 
-**Core**: `add-api-endpoint`, `add-database-model`, `add-react-component`, `write-tests`
-**AI**: `add-llm-provider`, `create-agent-node`, `rag-pipeline`
-**DevOps**: `docker-setup`, `ci-cd-pipeline`, `deployment`
-**Quality**: `code-review`, `fix-bug`, `refactor-code`
+## 📚 Key Documentation
 
-## Code Quality Rules
+| Document | Purpose |
+|----------|---------|
+| `docs/CURRENT_STATUS.md` | Sprint progress, blockers |
+| `docs/ARCHITECTURE.md` | System design, patterns |
+| `.claude/instructions/` | Agent behavior rules |
+| `.claude/skills/` | Skill documentation |
 
-1. **Type Safety**: All code must be fully typed
-2. **Testing**: Maintain >90% coverage
-3. **Security**: Follow OWASP Top 10
-4. **Performance**: Use async/await for I/O
-5. **Observability**: Trace all LLM calls
+---
 
-## Environment Variables
+## 🚀 Getting Started
 
-Required (at least one LLM key):
-- `OPENAI_API_KEY` - OpenAI API key
-- `ANTHROPIC_API_KEY` - Anthropic API key
-- `GOOGLE_API_KEY` - Google AI API key
+```bash
+# 1. Clone and setup
+git clone <repo>
+cd yg-starter
+./init.sh "My Project"
 
-See `.env.example` for full configuration.
+# 2. Add API keys to .env
+OPENAI_API_KEY=...
+# or ANTHROPIC_API_KEY=...
+# or GOOGLE_API_KEY=...
+
+# 3. Start services
+make dev
+
+# 4. Access
+# Frontend: http://localhost:5183
+# Backend:  http://localhost:8600/docs
+# Langfuse: http://localhost:3010
+```
+
+---
+
+**Version:** 1.0.0 (December 2025)
+**License:** MIT
