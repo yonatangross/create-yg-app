@@ -1,8 +1,12 @@
 """Embedding generation service using OpenAI text-embedding-3-small."""
 
+import asyncio
+import io
+import json
 import logging
 import math
 from functools import lru_cache
+from typing import Any
 
 import tiktoken
 from openai import (
@@ -84,6 +88,9 @@ class EmbeddingService:
     """
 
     MAX_TOKENS = 8000  # Below 8191 API limit with safety margin
+    BATCH_COMPLETION_WINDOW = "24h"  # Batch API completion window
+    BATCH_POLL_INTERVAL = 60  # Initial poll interval in seconds
+    BATCH_MAX_POLL_ATTEMPTS = 1440  # 24 hours at 1 min intervals
 
     def __init__(self) -> None:
         """Initialize the embedding service."""
@@ -250,6 +257,262 @@ class EmbeddingService:
             )
 
         return all_embeddings
+
+    async def generate_embeddings_batch_api(
+        self,
+        texts: list[str],
+        custom_ids: list[str] | None = None,
+    ) -> dict[str, list[float]]:
+        """Generate embeddings using Batch API (50% cost savings).
+
+        Use for non-time-sensitive operations like:
+        - Document ingestion
+        - Memory consolidation
+        - Bulk imports
+
+        The Batch API provides 50% cost savings but may take up to 24 hours to complete.
+        For urgent embedding needs, use generate_embedding() or generate_embeddings_batch().
+
+        Args:
+            texts: List of texts to embed (max 50,000 per batch).
+            custom_ids: Optional custom IDs for tracking (defaults to indices).
+
+        Returns:
+            Dict mapping custom_id to L2-normalized embedding vector.
+
+        Raises:
+            ValueError: If texts is empty or custom_ids length mismatches.
+            RuntimeError: If batch fails, expires, or is cancelled.
+            TimeoutError: If batch does not complete within 24 hours.
+        """
+        if not texts:
+            return {}
+
+        if custom_ids and len(custom_ids) != len(texts):
+            msg = f"custom_ids length ({len(custom_ids)}) must match texts length ({len(texts)})"
+            raise ValueError(msg)
+
+        custom_ids = custom_ids or [str(i) for i in range(len(texts))]
+
+        logger.info(
+            "batch_api_starting",
+            text_count=len(texts),
+            estimated_completion="24h",
+        )
+
+        # 1. Create batch file (JSONL)
+        batch_file = await self._create_batch_file(texts, custom_ids)
+
+        # 2. Submit batch
+        batch = await self.client.batches.create(
+            input_file_id=batch_file.id,
+            endpoint="/v1/embeddings",
+            completion_window=self.BATCH_COMPLETION_WINDOW,
+        )
+
+        logger.info(
+            "batch_submitted",
+            batch_id=batch.id,
+            text_count=len(texts),
+            input_file_id=batch_file.id,
+        )
+
+        # 3. Poll for completion
+        completed_batch = await self._poll_batch_completion(batch.id)
+
+        # 4. Download and parse results
+        results = await self._download_batch_results(completed_batch)
+
+        logger.info(
+            "batch_completed",
+            batch_id=batch.id,
+            result_count=len(results),
+        )
+
+        return results
+
+    async def _create_batch_file(
+        self,
+        texts: list[str],
+        custom_ids: list[str],
+    ) -> Any:
+        """Create JSONL batch file for OpenAI Batch API.
+
+        Args:
+            texts: List of texts to embed.
+            custom_ids: List of custom IDs for tracking.
+
+        Returns:
+            OpenAI FileObject with uploaded batch file.
+        """
+        lines = []
+        for custom_id, text in zip(custom_ids, texts, strict=True):
+            # Truncate text to token limit
+            truncated = self.truncate_to_tokens(text, self.MAX_TOKENS)
+            lines.append(
+                json.dumps(
+                    {
+                        "custom_id": custom_id,
+                        "method": "POST",
+                        "url": "/v1/embeddings",
+                        "body": {
+                            "model": self.model,
+                            "input": truncated,
+                        },
+                    }
+                )
+            )
+
+        content = "\n".join(lines)
+
+        logger.debug(
+            "batch_file_created",
+            line_count=len(lines),
+            size_bytes=len(content),
+        )
+
+        # Create file-like object from string content
+        file_content = io.BytesIO(content.encode("utf-8"))
+        file_content.name = "batch_embeddings.jsonl"
+
+        return await self.client.files.create(
+            file=file_content,
+            purpose="batch",
+        )
+
+    async def _poll_batch_completion(self, batch_id: str) -> Any:
+        """Poll batch status until completion with exponential backoff.
+
+        Args:
+            batch_id: The batch ID to poll.
+
+        Returns:
+            Completed batch object.
+
+        Raises:
+            RuntimeError: If batch fails, expires, or is cancelled.
+            TimeoutError: If batch does not complete within max attempts.
+        """
+        for attempt in range(self.BATCH_MAX_POLL_ATTEMPTS):
+            batch = await self.client.batches.retrieve(batch_id)
+
+            if batch.status == "completed":
+                logger.info(
+                    "batch_poll_completed",
+                    batch_id=batch_id,
+                    attempts=attempt + 1,
+                )
+                return batch
+            elif batch.status in ("failed", "expired", "cancelled"):
+                error_msg = f"Batch {batch_id} {batch.status}"
+                if hasattr(batch, "errors") and batch.errors:
+                    error_msg += f": {batch.errors}"
+                logger.error(
+                    "batch_poll_failed",
+                    batch_id=batch_id,
+                    status=batch.status,
+                    errors=getattr(batch, "errors", None),
+                )
+                raise RuntimeError(error_msg)
+
+            # Exponential backoff: 60s, 120s, 240s, 480s, capped at 5min (300s)
+            wait_time = min(self.BATCH_POLL_INTERVAL * (2 ** min(attempt, 4)), 300)
+
+            logger.debug(
+                "batch_poll_waiting",
+                batch_id=batch_id,
+                attempt=attempt + 1,
+                status=batch.status,
+                wait_time_seconds=wait_time,
+            )
+
+            await asyncio.sleep(wait_time)
+
+        error_msg = (
+            f"Batch {batch_id} did not complete within {self.BATCH_MAX_POLL_ATTEMPTS} attempts"
+        )
+        logger.error("batch_poll_timeout", batch_id=batch_id)
+        raise TimeoutError(error_msg)
+
+    async def _download_batch_results(self, batch: Any) -> dict[str, list[float]]:
+        """Download and parse batch results.
+
+        Args:
+            batch: Completed batch object with output_file_id.
+
+        Returns:
+            Dict mapping custom_id to L2-normalized embedding vector.
+
+        Raises:
+            ValueError: If batch has no output_file_id or results are malformed.
+        """
+        if not hasattr(batch, "output_file_id") or not batch.output_file_id:
+            msg = f"Batch {batch.id} has no output_file_id"
+            raise ValueError(msg)
+
+        logger.debug(
+            "batch_downloading_results",
+            batch_id=batch.id,
+            output_file_id=batch.output_file_id,
+        )
+
+        # Download results file
+        output_file = await self.client.files.content(batch.output_file_id)
+
+        # Parse JSONL results
+        results = {}
+        error_count = 0
+
+        for line in output_file.text.strip().split("\n"):
+            if not line:
+                continue
+
+            try:
+                result = json.loads(line)
+
+                # Check for errors in individual requests
+                if "error" in result:
+                    error_count += 1
+                    logger.warning(
+                        "batch_result_error",
+                        custom_id=result.get("custom_id"),
+                        error=result["error"],
+                    )
+                    continue
+
+                custom_id = result["custom_id"]
+                embedding = result["response"]["body"]["data"][0]["embedding"]
+
+                # Validate dimensions
+                if len(embedding) != self.dimensions:
+                    logger.warning(
+                        "batch_result_invalid_dimensions",
+                        custom_id=custom_id,
+                        expected=self.dimensions,
+                        got=len(embedding),
+                    )
+                    continue
+
+                # Apply L2 normalization
+                results[custom_id] = normalize_vector(embedding)
+
+            except (json.JSONDecodeError, KeyError, IndexError) as e:
+                error_count += 1
+                logger.warning(
+                    "batch_result_parse_error",
+                    line=line[:100],
+                    error=str(e),
+                )
+                continue
+
+        logger.info(
+            "batch_results_downloaded",
+            batch_id=batch.id,
+            success_count=len(results),
+            error_count=error_count,
+        )
+
+        return results
 
 
 @lru_cache

@@ -37,6 +37,7 @@ class AgentMemory(Base):
         relevance_score: Quality metric (0-1).
         memory_metadata: Flexible JSONB for additional context.
         created_at: Timestamp of creation.
+        last_accessed_at: Timestamp of last access for relevance decay.
     """
 
     __tablename__ = "agent_memories"
@@ -81,6 +82,10 @@ class AgentMemory(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+    last_accessed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     __table_args__ = (

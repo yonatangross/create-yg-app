@@ -1,19 +1,55 @@
 """Memory storage and retrieval service using PostgreSQL + pgvector."""
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.db.models.memory import AgentMemory, ConversationSummary, MemoryType
+from app.shared.services.memory.agent_memory_mapping import get_memory_types_for_agent
 from app.shared.services.memory.embedding_service import (
     EmbeddingService,
     get_embedding_service,
 )
 
 logger = get_logger(__name__)
+
+
+def calculate_recency_factor(last_accessed: datetime | None) -> float:
+    """Calculate recency boost factor for memory ranking.
+
+    Memories decay in relevance over time. This function returns a multiplier
+    between 0.5 and 1.0 based on how recently the memory was accessed.
+
+    Args:
+        last_accessed: When the memory was last accessed (None means never).
+
+    Returns:
+        Float between 0.5 (very old) and 1.0 (recent/never accessed).
+        Never-accessed memories get 1.0 to ensure they're not penalized.
+
+    Examples:
+        >>> calculate_recency_factor(None)
+        1.0
+
+        >>> calculate_recency_factor(datetime.now(UTC))
+        1.0
+
+        >>> old_date = datetime.now(UTC) - timedelta(days=365)
+        >>> calculate_recency_factor(old_date)
+        0.5
+    """
+    if last_accessed is None:
+        return 1.0
+
+    days_old = (datetime.now(UTC) - last_accessed).days
+
+    # Linear decay: 1.0 at day 0, 0.5 at day 365
+    # Capped at minimum 0.5 to avoid completely discarding old memories
+    return max(0.5, 1.0 - (days_old / 365) * 0.5)
 
 
 @dataclass
@@ -23,10 +59,12 @@ class MemorySearchResult:
     Attributes:
         memory: The matched AgentMemory record.
         similarity: Cosine similarity score (0-1, higher is more similar).
+        adjusted_score: Final score combining similarity, relevance, and recency.
     """
 
     memory: AgentMemory
     similarity: float
+    adjusted_score: float
 
 
 class MemoryService:
@@ -117,11 +155,12 @@ class MemoryService:
         conversation_id: str | None = None,
         limit: int = 5,
         threshold: float = 0.7,
+        agent_type: str | None = None,
     ) -> list[MemorySearchResult]:
-        """Search memories by semantic similarity.
+        """Search memories by semantic similarity with relevance decay.
 
-        Uses pgvector's cosine distance for similarity ranking.
-        Distance = 1 - similarity, so we filter by distance <= (1 - threshold).
+        Uses pgvector's cosine distance for similarity ranking, combined with
+        relevance score and recency factor for optimized results.
 
         Args:
             query: Search query text.
@@ -129,9 +168,10 @@ class MemoryService:
             conversation_id: Optional filter by conversation.
             limit: Maximum results to return.
             threshold: Minimum similarity score (0-1).
+            agent_type: Optional agent type for filtering relevant memory types.
 
         Returns:
-            List of MemorySearchResult sorted by similarity (descending).
+            List of MemorySearchResult sorted by adjusted_score (descending).
         """
         logger.debug(
             "searching_memories",
@@ -139,6 +179,7 @@ class MemoryService:
             memory_type=memory_type.value if memory_type else None,
             threshold=threshold,
             limit=limit,
+            agent_type=agent_type,
         )
 
         # Generate query embedding
@@ -154,7 +195,7 @@ class MemoryService:
             )
             .where(AgentMemory.embedding.cosine_distance(query_embedding) <= max_distance)
             .order_by("distance")
-            .limit(limit)
+            .limit(limit * 2)  # Fetch more for post-filtering/re-ranking
         )
 
         # Apply optional filters
@@ -163,21 +204,39 @@ class MemoryService:
         if conversation_id:
             stmt = stmt.where(AgentMemory.conversation_id == conversation_id)
 
+        # Apply agent-specific memory type filtering
+        if agent_type:
+            allowed_types = get_memory_types_for_agent(agent_type)
+            if allowed_types:  # None means all types allowed
+                stmt = stmt.where(AgentMemory.memory_type.in_(allowed_types))
+
         result = await self.session.execute(stmt)
         rows = result.all()
 
-        results = [
-            MemorySearchResult(
-                memory=row.AgentMemory,
-                similarity=1.0 - row.distance,
+        # Calculate adjusted scores with relevance decay
+        results = []
+        for row in rows:
+            similarity = 1.0 - row.distance
+            recency = calculate_recency_factor(row.AgentMemory.last_accessed_at)
+            adjusted_score = similarity * row.AgentMemory.relevance_score * recency
+
+            results.append(
+                MemorySearchResult(
+                    memory=row.AgentMemory,
+                    similarity=similarity,
+                    adjusted_score=adjusted_score,
+                )
             )
-            for row in rows
-        ]
+
+        # Sort by adjusted score and limit
+        results.sort(key=lambda x: x.adjusted_score, reverse=True)
+        results = results[:limit]
 
         logger.debug(
             "search_complete",
             results_count=len(results),
             top_similarity=results[0].similarity if results else None,
+            top_adjusted_score=results[0].adjusted_score if results else None,
         )
 
         return results
@@ -206,6 +265,10 @@ class MemoryService:
             logger.debug("proactive_recall_empty", context_length=len(context))
             return ""
 
+        # Track access and boost relevance for retrieved memories
+        memory_ids = [r.memory.id for r in results]
+        await self._track_memory_access(memory_ids)
+
         lines = ["## Relevant Context from Memory\n"]
         for i, r in enumerate(results, 1):
             type_label = r.memory.memory_type.value.replace("_", " ").title()
@@ -220,6 +283,102 @@ class MemoryService:
         )
 
         return context_str
+
+    async def proactive_recall_for_agent(
+        self,
+        context: str,
+        agent_type: str,
+        limit: int = 3,
+        threshold: float = 0.65,
+    ) -> str:
+        """Fetch relevant memories for a specific agent type.
+
+        Like proactive_recall, but filters memories by agent type for efficiency.
+
+        Args:
+            context: Current conversation context (typically user message).
+            agent_type: Agent identifier (e.g., "chat", "code_review").
+            limit: Maximum memories to include.
+            threshold: Minimum similarity for inclusion.
+
+        Returns:
+            Formatted context string, or empty string if no matches.
+        """
+        results = await self.search(
+            context,
+            limit=limit,
+            threshold=threshold,
+            agent_type=agent_type,
+        )
+
+        if not results:
+            logger.debug(
+                "proactive_recall_empty",
+                context_length=len(context),
+                agent_type=agent_type,
+            )
+            return ""
+
+        # Track access and boost relevance for retrieved memories
+        memory_ids = [r.memory.id for r in results]
+        await self._track_memory_access(memory_ids)
+
+        lines = ["## Relevant Context from Memory\n"]
+        for i, r in enumerate(results, 1):
+            type_label = r.memory.memory_type.value.replace("_", " ").title()
+            lines.append(f"{i}. [{type_label}] {r.memory.content}\n")
+
+        context_str = "\n".join(lines)
+
+        logger.info(
+            "proactive_recall_success",
+            agent_type=agent_type,
+            memories_found=len(results),
+            context_length=len(context_str),
+        )
+
+        return context_str
+
+    async def _track_memory_access(self, memory_ids: list[UUID]) -> None:
+        """Update last_accessed_at and boost relevance for accessed memories.
+
+        Args:
+            memory_ids: List of memory IDs that were accessed.
+        """
+        if not memory_ids:
+            return
+
+        now = datetime.now(UTC)
+
+        # Update last_accessed_at and boost relevance (capped at 1.0)
+        stmt = (
+            update(AgentMemory)
+            .where(AgentMemory.id.in_(memory_ids))
+            .values(
+                last_accessed_at=now,
+                relevance_score=AgentMemory.relevance_score + 0.1,
+            )
+        )
+
+        # Cap relevance at 1.0 using CASE WHEN
+        from sqlalchemy import case
+
+        stmt = (
+            update(AgentMemory)
+            .where(AgentMemory.id.in_(memory_ids))
+            .values(
+                last_accessed_at=now,
+                relevance_score=case(
+                    (AgentMemory.relevance_score + 0.1 > 1.0, 1.0),
+                    else_=AgentMemory.relevance_score + 0.1,
+                ),
+            )
+        )
+
+        await self.session.execute(stmt)
+        await self.session.commit()
+
+        logger.debug("memory_access_tracked", count=len(memory_ids))
 
     async def get_conversation_summary(
         self,

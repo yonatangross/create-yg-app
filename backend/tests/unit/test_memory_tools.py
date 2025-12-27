@@ -24,6 +24,7 @@ class TestSearchMemoryTool:
         mock_result = MemorySearchResult(
             memory=mock_memory,
             similarity=0.85,
+            adjusted_score=0.85,
         )
 
         # Mock the service
@@ -107,6 +108,7 @@ class TestSearchMemoryTool:
         mock_result = MemorySearchResult(
             memory=mock_memory,
             similarity=0.92,
+            adjusted_score=0.92,
         )
 
         with (
@@ -188,9 +190,9 @@ class TestSearchMemoryTool:
         ]
 
         mock_results = [
-            MemorySearchResult(memory=mock_memories[0], similarity=0.95),
-            MemorySearchResult(memory=mock_memories[1], similarity=0.82),
-            MemorySearchResult(memory=mock_memories[2], similarity=0.75),
+            MemorySearchResult(memory=mock_memories[0], similarity=0.95, adjusted_score=0.95),
+            MemorySearchResult(memory=mock_memories[1], similarity=0.82, adjusted_score=0.82),
+            MemorySearchResult(memory=mock_memories[2], similarity=0.75, adjusted_score=0.75),
         ]
 
         with (

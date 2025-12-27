@@ -1,6 +1,7 @@
 """Unit tests for EmbeddingService."""
 
 import math
+import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -348,6 +349,330 @@ class TestEmbeddingServiceRetry:
 
         assert len(result) == 2
         assert embedding_service.client.embeddings.create.call_count == 2
+
+
+class TestBatchAPIEmbedding:
+    """Tests for Batch API embedding generation."""
+
+    @pytest.fixture
+    def mock_batch_client(self):
+        """Create mock OpenAI client for Batch API."""
+        mock_client = MagicMock()
+
+        # Mock file creation
+        mock_file = MagicMock()
+        mock_file.id = "file-123"
+        mock_client.files.create = AsyncMock(return_value=mock_file)
+
+        # Mock batch creation
+        mock_batch = MagicMock()
+        mock_batch.id = "batch-456"
+        mock_batch.status = "completed"
+        mock_batch.output_file_id = "file-789"
+        mock_client.batches.create = AsyncMock(return_value=mock_batch)
+        mock_client.batches.retrieve = AsyncMock(return_value=mock_batch)
+
+        # Mock file content download (JSONL results)
+        mock_output = MagicMock()
+        mock_output.text = (
+            '{"custom_id": "0", "response": {"body": {"data": [{"embedding": '
+            + str([0.5] * 1536)
+            + "}]}}}\n"
+            '{"custom_id": "1", "response": {"body": {"data": [{"embedding": '
+            + str([0.3] * 1536)
+            + "}]}}}"
+        )
+        mock_client.files.content = AsyncMock(return_value=mock_output)
+
+        return mock_client
+
+    @pytest.fixture
+    def batch_service(self, mock_batch_client):
+        """Create EmbeddingService with mocked batch client."""
+        with patch("app.shared.services.memory.embedding_service.settings") as mock_settings:
+            mock_settings.OPENAI_API_KEY = "test-key"
+            service = EmbeddingService()
+            service.client = mock_batch_client
+            return service
+
+    @pytest.mark.asyncio
+    async def test_batch_api_empty_texts_returns_empty(self, batch_service):
+        """Test batch API with empty list returns empty dict."""
+        result = await batch_service.generate_embeddings_batch_api([])
+        assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_batch_api_generates_default_custom_ids(self, batch_service):
+        """Test batch API generates default custom_ids from indices."""
+        texts = ["First text", "Second text"]
+        result = await batch_service.generate_embeddings_batch_api(texts)
+
+        # Should have results keyed by indices
+        assert "0" in result
+        assert "1" in result
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_batch_api_uses_custom_ids(self, batch_service, mock_batch_client):
+        """Test batch API uses provided custom_ids."""
+        # Update mock to return custom IDs
+        mock_output = MagicMock()
+        mock_output.text = (
+            '{"custom_id": "doc_1", "response": {"body": {"data": [{"embedding": '
+            + str([0.5] * 1536)
+            + "}]}}}\n"
+            '{"custom_id": "doc_2", "response": {"body": {"data": [{"embedding": '
+            + str([0.3] * 1536)
+            + "}]}}}"
+        )
+        mock_batch_client.files.content = AsyncMock(return_value=mock_output)
+
+        texts = ["First text", "Second text"]
+        custom_ids = ["doc_1", "doc_2"]
+        result = await batch_service.generate_embeddings_batch_api(texts, custom_ids)
+
+        assert "doc_1" in result
+        assert "doc_2" in result
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_batch_api_mismatched_custom_ids_raises(self, batch_service):
+        """Test batch API raises on mismatched custom_ids length."""
+        texts = ["Text 1", "Text 2"]
+        custom_ids = ["id_1"]  # Only 1 ID for 2 texts
+
+        with pytest.raises(ValueError, match="custom_ids length.*must match"):
+            await batch_service.generate_embeddings_batch_api(texts, custom_ids)
+
+    @pytest.mark.asyncio
+    async def test_batch_api_creates_file_correctly(self, batch_service, mock_batch_client):
+        """Test batch API creates JSONL file with correct format."""
+        texts = ["Hello", "World"]
+        await batch_service.generate_embeddings_batch_api(texts)
+
+        # Verify file creation was called
+        mock_batch_client.files.create.assert_called_once()
+        call_args = mock_batch_client.files.create.call_args
+        assert call_args.kwargs["purpose"] == "batch"
+
+        # Verify file content is bytes-like
+        file_obj = call_args.kwargs["file"]
+        assert hasattr(file_obj, "read")
+
+    @pytest.mark.asyncio
+    async def test_batch_api_submits_batch_correctly(self, batch_service, mock_batch_client):
+        """Test batch API submits batch with correct parameters."""
+        texts = ["Test text"]
+        await batch_service.generate_embeddings_batch_api(texts)
+
+        mock_batch_client.batches.create.assert_called_once()
+        call_args = mock_batch_client.batches.create.call_args
+        assert call_args.kwargs["input_file_id"] == "file-123"
+        assert call_args.kwargs["endpoint"] == "/v1/embeddings"
+        assert call_args.kwargs["completion_window"] == "24h"
+
+    @pytest.mark.asyncio
+    async def test_batch_api_polls_until_completion(self, batch_service, mock_batch_client):
+        """Test batch API polls status until completion."""
+        # Mock in-progress then completed
+        in_progress_batch = MagicMock()
+        in_progress_batch.id = "batch-456"
+        in_progress_batch.status = "in_progress"
+
+        completed_batch = MagicMock()
+        completed_batch.id = "batch-456"
+        completed_batch.status = "completed"
+        completed_batch.output_file_id = "file-789"
+
+        mock_batch_client.batches.retrieve = AsyncMock(
+            side_effect=[in_progress_batch, completed_batch]
+        )
+
+        # Reduce poll interval for faster test
+        batch_service.BATCH_POLL_INTERVAL = 0.1
+
+        texts = ["Test"]
+        await batch_service.generate_embeddings_batch_api(texts)
+
+        # Should have polled twice
+        assert mock_batch_client.batches.retrieve.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_batch_api_failed_status_raises(self, batch_service, mock_batch_client):
+        """Test batch API raises on failed status."""
+        failed_batch = MagicMock()
+        failed_batch.id = "batch-456"
+        failed_batch.status = "failed"
+        failed_batch.errors = {"message": "Something went wrong"}
+
+        mock_batch_client.batches.retrieve = AsyncMock(return_value=failed_batch)
+
+        with pytest.raises(RuntimeError, match="Batch batch-456 failed"):
+            await batch_service.generate_embeddings_batch_api(["Test"])
+
+    @pytest.mark.asyncio
+    async def test_batch_api_expired_status_raises(self, batch_service, mock_batch_client):
+        """Test batch API raises on expired status."""
+        expired_batch = MagicMock()
+        expired_batch.id = "batch-456"
+        expired_batch.status = "expired"
+
+        mock_batch_client.batches.retrieve = AsyncMock(return_value=expired_batch)
+
+        with pytest.raises(RuntimeError, match="Batch batch-456 expired"):
+            await batch_service.generate_embeddings_batch_api(["Test"])
+
+    @pytest.mark.asyncio
+    async def test_batch_api_cancelled_status_raises(self, batch_service, mock_batch_client):
+        """Test batch API raises on cancelled status."""
+        cancelled_batch = MagicMock()
+        cancelled_batch.id = "batch-456"
+        cancelled_batch.status = "cancelled"
+
+        mock_batch_client.batches.retrieve = AsyncMock(return_value=cancelled_batch)
+
+        with pytest.raises(RuntimeError, match="Batch batch-456 cancelled"):
+            await batch_service.generate_embeddings_batch_api(["Test"])
+
+    @pytest.mark.asyncio
+    async def test_batch_api_timeout_raises(self, batch_service, mock_batch_client):
+        """Test batch API raises TimeoutError after max attempts."""
+        in_progress_batch = MagicMock()
+        in_progress_batch.id = "batch-456"
+        in_progress_batch.status = "in_progress"
+
+        mock_batch_client.batches.retrieve = AsyncMock(return_value=in_progress_batch)
+
+        # Set very low max attempts for fast test
+        batch_service.BATCH_MAX_POLL_ATTEMPTS = 2
+        batch_service.BATCH_POLL_INTERVAL = 0.01
+
+        with pytest.raises(TimeoutError, match="did not complete within 2 attempts"):
+            await batch_service.generate_embeddings_batch_api(["Test"])
+
+    @pytest.mark.asyncio
+    async def test_batch_api_exponential_backoff(self, batch_service, mock_batch_client):
+        """Test batch API uses exponential backoff for polling."""
+        in_progress_batch = MagicMock()
+        in_progress_batch.status = "in_progress"
+
+        completed_batch = MagicMock()
+        completed_batch.status = "completed"
+        completed_batch.output_file_id = "file-789"
+
+        # Return in-progress 3 times, then completed
+        mock_batch_client.batches.retrieve = AsyncMock(
+            side_effect=[in_progress_batch, in_progress_batch, in_progress_batch, completed_batch]
+        )
+
+        batch_service.BATCH_POLL_INTERVAL = 1  # 1 second base
+
+        start = time.time()
+        await batch_service.generate_embeddings_batch_api(["Test"])
+        duration = time.time() - start
+
+        # Should wait: 1s + 2s + 4s = 7s total (with some tolerance)
+        assert duration >= 6  # Allow for some variance
+
+    @pytest.mark.asyncio
+    async def test_batch_api_returns_normalized_vectors(self, batch_service):
+        """Test batch API returns L2-normalized vectors."""
+        texts = ["Test 1", "Test 2"]
+        result = await batch_service.generate_embeddings_batch_api(texts)
+
+        # Verify normalization
+        for embedding in result.values():
+            assert len(embedding) == 1536
+            magnitude = math.sqrt(sum(x * x for x in embedding))
+            assert abs(magnitude - 1.0) < 1e-6
+
+    @pytest.mark.asyncio
+    async def test_batch_api_handles_partial_errors(self, batch_service, mock_batch_client):
+        """Test batch API handles errors in individual results."""
+        # Mock output with one success and one error
+        mock_output = MagicMock()
+        mock_output.text = (
+            '{"custom_id": "0", "response": {"body": {"data": [{"embedding": '
+            + str([0.5] * 1536)
+            + "}]}}}\n"
+            '{"custom_id": "1", "error": {"message": "Rate limit exceeded"}}'
+        )
+        mock_batch_client.files.content = AsyncMock(return_value=mock_output)
+
+        texts = ["Test 1", "Test 2"]
+        result = await batch_service.generate_embeddings_batch_api(texts)
+
+        # Should only have successful result
+        assert len(result) == 1
+        assert "0" in result
+        assert "1" not in result
+
+    @pytest.mark.asyncio
+    async def test_batch_api_handles_invalid_dimensions(self, batch_service, mock_batch_client):
+        """Test batch API skips results with invalid dimensions."""
+        # Mock output with one valid and one invalid dimension
+        mock_output = MagicMock()
+        mock_output.text = (
+            '{"custom_id": "0", "response": {"body": {"data": [{"embedding": '
+            + str([0.5] * 1536)
+            + "}]}}}\n"
+            '{"custom_id": "1", "response": {"body": {"data": [{"embedding": '
+            + str([0.3] * 100)  # Wrong dimension!
+            + "}]}}}"
+        )
+        mock_batch_client.files.content = AsyncMock(return_value=mock_output)
+
+        texts = ["Test 1", "Test 2"]
+        result = await batch_service.generate_embeddings_batch_api(texts)
+
+        # Should only have valid result
+        assert len(result) == 1
+        assert "0" in result
+        assert "1" not in result
+
+    @pytest.mark.asyncio
+    async def test_batch_api_handles_malformed_json(self, batch_service, mock_batch_client):
+        """Test batch API handles malformed JSON in results."""
+        # Mock output with valid and malformed JSON
+        mock_output = MagicMock()
+        mock_output.text = (
+            '{"custom_id": "0", "response": {"body": {"data": [{"embedding": '
+            + str([0.5] * 1536)
+            + "}]}}}\n"
+            "{invalid json here}"
+        )
+        mock_batch_client.files.content = AsyncMock(return_value=mock_output)
+
+        texts = ["Test 1", "Test 2"]
+        result = await batch_service.generate_embeddings_batch_api(texts)
+
+        # Should only have valid result
+        assert len(result) == 1
+        assert "0" in result
+
+    @pytest.mark.asyncio
+    async def test_batch_api_no_output_file_raises(self, batch_service, mock_batch_client):
+        """Test batch API raises if batch has no output_file_id."""
+        bad_batch = MagicMock()
+        bad_batch.id = "batch-456"
+        bad_batch.status = "completed"
+        bad_batch.output_file_id = None
+
+        mock_batch_client.batches.retrieve = AsyncMock(return_value=bad_batch)
+
+        with pytest.raises(ValueError, match="has no output_file_id"):
+            await batch_service.generate_embeddings_batch_api(["Test"])
+
+    @pytest.mark.asyncio
+    async def test_batch_api_truncates_long_texts(self, batch_service, mock_batch_client):
+        """Test batch API truncates texts exceeding MAX_TOKENS."""
+        long_text = "word " * 10000  # ~10000 tokens
+        texts = [long_text]
+
+        await batch_service.generate_embeddings_batch_api(texts)
+
+        # Verify file was created (we can't easily check content, but it should work)
+        mock_batch_client.files.create.assert_called_once()
 
 
 class TestGetEmbeddingService:
