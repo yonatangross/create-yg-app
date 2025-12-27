@@ -33,6 +33,7 @@ dependencies = [
 
     # Caching & Redis
     "redis>=5.2.0",
+    "langchain-redis>=0.2.0",
 
     # HTTP & Utilities
     "httpx>=0.28.0",

@@ -53,8 +53,19 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str | None = Field(default=None)
 
-    # Redis
+    # Redis Connection
     REDIS_URL: str = Field(default="redis://localhost:6390")
+    REDIS_SOCKET_CONNECT_TIMEOUT: float = Field(default=5.0)
+    REDIS_SOCKET_TIMEOUT: float = Field(default=5.0)
+    REDIS_SOCKET_KEEPALIVE: bool = Field(default=True)
+    REDIS_MAX_CONNECTIONS: int = Field(default=10)
+    REDIS_HEALTH_CHECK_INTERVAL: int = Field(default=30)
+
+    # Redis Caching (Semantic + Exact)
+    REDIS_SEMANTIC_CACHE_TTL: int = Field(default=86400)  # 24 hours
+    REDIS_SIMILARITY_THRESHOLD: float = Field(default=0.08)  # 92% similarity
+    REDIS_EXACT_CACHE_TTL: int = Field(default=3600)  # 1 hour
+    REDIS_CHAT_HISTORY_TTL: int = Field(default=604800)  # 7 days
 
     # LLM Configuration
     LLM_MODEL: str = Field(default="gpt-4o-mini")
