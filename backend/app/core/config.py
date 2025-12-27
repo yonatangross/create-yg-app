@@ -17,12 +17,15 @@ LLM_PROVIDER_ALIAS_MAP: Final[dict[str, str]] = {
     "google": "google_genai",
     "gemini": "google_genai",
     "google_genai": "google_genai",
+    "xai": "xai",
+    "grok": "xai",
 }
 
 LLM_PROVIDER_API_FIELDS: Final[dict[str, str]] = {
     "openai": "OPENAI_API_KEY",
     "anthropic": "ANTHROPIC_API_KEY",
     "google_genai": "GOOGLE_API_KEY",
+    "xai": "XAI_API_KEY",
 }
 
 
@@ -79,6 +82,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str | None = Field(default=None)
     ANTHROPIC_API_KEY: str | None = Field(default=None)
     GOOGLE_API_KEY: str | None = Field(default=None)
+    XAI_API_KEY: str | None = Field(default=None)
 
     # Langfuse Observability
     LANGFUSE_ENABLED: bool = Field(default=False)
@@ -125,6 +129,8 @@ class Settings(BaseSettings):
             return "anthropic"
         if self.GOOGLE_API_KEY:
             return "google_genai"
+        if self.XAI_API_KEY:
+            return "xai"
 
         msg = "Unable to determine LLM provider. Set LLM_PROVIDER or provide an API key."
         raise ValueError(msg)

@@ -102,6 +102,7 @@ services:
     container_name: yg-starter-frontend
     environment:
       NODE_ENV: development
+      VITE_API_URL: http://backend:8600
       VITE_API_BASE_URL: http://localhost:8600
     ports:
       - "5183:5173"

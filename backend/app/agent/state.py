@@ -28,5 +28,10 @@ class AgentState(TypedDict, total=False):
     current_step: str
     should_retrieve: bool
 
+    # Long-term memory context injected into system prompt
+    # This field holds persistent context from previous conversations
+    # that should influence the agent's behavior and responses
+    proactive_context: str
+
     # Output
     response: str
