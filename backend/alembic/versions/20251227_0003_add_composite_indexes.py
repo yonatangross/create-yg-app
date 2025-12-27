@@ -20,27 +20,25 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     """Add composite indexes for optimized memory queries."""
     # Composite index for memory type + conversation queries
-    # Useful for: SELECT * FROM agent_memories WHERE memory_type = ? AND conversation_id = ?
-    op.create_index(
-        "ix_agent_memories_type_conv",
-        "agent_memories",
-        ["memory_type", "conversation_id"],
-        postgresql_where="conversation_id IS NOT NULL",
-        unique=False,
-    )
-
-    # Partial index for active memories (accessed recently)
-    # Useful for: SELECT * FROM agent_memories WHERE last_accessed_at > NOW() - INTERVAL '30 days'
+    # Using raw SQL with IF NOT EXISTS for idempotency
     op.execute(
         """
-        CREATE INDEX ix_agent_memories_active
+        CREATE INDEX IF NOT EXISTS ix_agent_memories_type_conv
+        ON agent_memories (memory_type, conversation_id)
+        WHERE conversation_id IS NOT NULL
+        """
+    )
+
+    # Index for recently accessed memories (sorted by last_accessed_at DESC)
+    op.execute(
+        """
+        CREATE INDEX IF NOT EXISTS ix_agent_memories_last_accessed
         ON agent_memories (last_accessed_at)
-        WHERE last_accessed_at > NOW() - INTERVAL '30 days'
         """
     )
 
 
 def downgrade() -> None:
     """Remove composite indexes."""
-    op.drop_index("ix_agent_memories_active", "agent_memories")
-    op.drop_index("ix_agent_memories_type_conv", "agent_memories")
+    op.execute("DROP INDEX IF EXISTS ix_agent_memories_last_accessed")
+    op.execute("DROP INDEX IF EXISTS ix_agent_memories_type_conv")
