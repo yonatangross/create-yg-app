@@ -28,16 +28,24 @@ async def generate_node(state: AgentState) -> dict:
     retrieved_chunks = state.get("retrieved_chunks", [])
     messages = state.get("messages", [])
     proactive_context = state.get("proactive_context", "")
+    conversation_summary = state.get("conversation_summary", "")
 
     logger.info("generating_response", query=query[:100])
 
-    # Build system prompt with proactive context
-    system_content = ""
+    # Build system prompt with proactive context and conversation summary
+    # Order: proactive_context -> conversation_summary -> base prompt
+    system_parts = []
+
     if proactive_context:
-        system_content = f"{proactive_context}\n---\n{SYSTEM_PROMPT}"
+        system_parts.append(proactive_context)
         logger.info("using_proactive_context", context_length=len(proactive_context))
-    else:
-        system_content = SYSTEM_PROMPT
+
+    if conversation_summary:
+        system_parts.append(f"## Earlier Conversation Summary\n{conversation_summary}")
+        logger.info("using_conversation_summary", summary_length=len(conversation_summary))
+
+    system_parts.append(SYSTEM_PROMPT)
+    system_content = "\n---\n".join(system_parts)
 
     # Build context from retrieved chunks
     context = ""

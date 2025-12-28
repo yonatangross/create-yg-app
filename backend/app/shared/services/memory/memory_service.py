@@ -259,7 +259,22 @@ class MemoryService:
         vector_stmt = vector_stmt.limit(fetch_limit)
 
         # ===== 2. KEYWORD SEARCH (BM25 via tsvector) =====
-        ts_query = func.plainto_tsquery("english", query)
+        # Use OR-based matching: any query word matching is sufficient
+        # This is more lenient than plainto_tsquery which uses AND
+        # E.g., "Tell me about Alice" will match "User's name is Alice"
+        # even though "tell" doesn't appear in the memory
+        #
+        # Convert plainto_tsquery (AND) to OR by replacing '&' with '|':
+        # plainto_tsquery('Tell me about Alice') = 'tell' & 'alic'
+        # After replace: 'tell' | 'alic' (matches if ANY word is found)
+        from sqlalchemy import Text
+
+        ts_query = func.to_tsquery(
+            "english",
+            func.replace(
+                func.plainto_tsquery("english", query).cast(Text), " & ", " | "
+            ),
+        )
 
         keyword_stmt = select(
             AgentMemory.id,

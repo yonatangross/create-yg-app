@@ -14,6 +14,7 @@ from app.core.logging import get_logger
 from app.db.session import get_session
 from app.middleware.rate_limit import limiter
 from app.shared.services.cache.redis_service import get_chat_history
+from app.shared.services.memory.compaction_service import SessionCompactor
 from app.shared.services.memory.embedding_service import get_embedding_service
 from app.shared.services.memory.extraction_service import get_extraction_service
 from app.shared.services.memory.memory_service import MemoryService
@@ -57,6 +58,40 @@ async def _extract_memories_background(
     except Exception as e:
         logger.warning(
             "background_extraction_failed",
+            conversation_id=conversation_id,
+            error=str(e),
+            traceback=traceback.format_exc(),
+        )
+
+
+async def _compact_conversation_background(
+    messages: list,
+    conversation_id: str,
+) -> None:
+    """Background task to compact conversation if threshold exceeded.
+
+    Summarizes older messages and stores the summary for future sessions.
+    Runs asynchronously without blocking the response.
+    """
+    import traceback
+
+    try:
+        async with get_session() as session:
+            memory_service = MemoryService(session, get_embedding_service())
+            compactor = SessionCompactor(memory_service)
+            result = await compactor.compact(messages, conversation_id)
+
+            if result.was_compacted:
+                logger.info(
+                    "background_compaction_complete",
+                    conversation_id=conversation_id,
+                    original_count=result.original_count,
+                    compacted_count=result.compacted_count,
+                    summary_length=len(result.summary) if result.summary else 0,
+                )
+    except Exception as e:
+        logger.warning(
+            "background_compaction_failed",
             conversation_id=conversation_id,
             error=str(e),
             traceback=traceback.format_exc(),
@@ -153,6 +188,32 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:  # noqa: AR
                 kept_messages=len(messages),
             )
 
+        # 1b. LOAD CONVERSATION SUMMARY (if exists) for context continuity
+        conversation_summary = ""
+        try:
+            async with asyncio.timeout(3.0):
+                async with get_session() as session:
+                    memory_service = MemoryService(session, get_embedding_service())
+                    compactor = SessionCompactor(memory_service)
+                    existing_summary, _ = await compactor.get_context_with_summary(
+                        messages, conversation_id
+                    )
+                    if existing_summary:
+                        conversation_summary = existing_summary
+                        logger.debug(
+                            "loaded_conversation_summary",
+                            conversation_id=conversation_id,
+                            summary_length=len(existing_summary),
+                        )
+        except TimeoutError:
+            logger.warning("conversation_summary_timeout", conversation_id=conversation_id)
+        except Exception as e:
+            logger.warning(
+                "conversation_summary_failed",
+                conversation_id=conversation_id,
+                error=str(e),
+            )
+
         # 2. LOAD LONG-TERM MEMORY (PostgreSQL) with graceful degradation
         # Timeout must accommodate embedding API latency (1-3s for cold start)
         proactive_context = ""
@@ -185,6 +246,7 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:  # noqa: AR
                         "conversation_id": conversation_id,
                         "messages": messages,
                         "proactive_context": proactive_context,
+                        "conversation_summary": conversation_summary,
                     }
                 )
         except TimeoutError:
@@ -225,19 +287,30 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:  # noqa: AR
             # Don't fail request if stats tracking fails
             logger.debug("stats_tracking_failed", error=str(e))
 
-        # 6. EXTRACT MEMORIES (background, non-blocking)
-        # Only extract if we have enough messages for context
-        if len(messages) >= 4:
+        # 6. BACKGROUND TASKS (non-blocking)
+        # Build updated message list for background processing
+        updated_messages = [
+            *messages,
+            HumanMessage(content=body.message),
+            AIMessage(content=response_text),
+        ]
+
+        # 6a. EXTRACT MEMORIES - only if we have enough messages for context
+        if len(messages) >= MIN_MESSAGES_FOR_EXTRACTION:
             asyncio.create_task(
                 _extract_memories_background(
-                    messages=[
-                        *messages,
-                        HumanMessage(content=body.message),
-                        AIMessage(content=response_text),
-                    ],
+                    messages=updated_messages,
                     conversation_id=conversation_id,
                 )
             )
+
+        # 6b. COMPACT CONVERSATION - summarize old messages to save context tokens
+        asyncio.create_task(
+            _compact_conversation_background(
+                messages=updated_messages,
+                conversation_id=conversation_id,
+            )
+        )
 
         # Parse memory context
         memory_items = parse_proactive_context(proactive_context)
@@ -302,6 +375,32 @@ async def chat_stream(request: Request, body: ChatRequest):  # noqa: ARG001
             kept_messages=len(messages),
         )
 
+    # 1b. LOAD CONVERSATION SUMMARY (if exists) for context continuity
+    conversation_summary = ""
+    try:
+        async with asyncio.timeout(3.0):
+            async with get_session() as session:
+                memory_service = MemoryService(session, get_embedding_service())
+                compactor = SessionCompactor(memory_service)
+                existing_summary, _ = await compactor.get_context_with_summary(
+                    messages, conversation_id
+                )
+                if existing_summary:
+                    conversation_summary = existing_summary
+                    logger.debug(
+                        "loaded_conversation_summary",
+                        conversation_id=conversation_id,
+                        summary_length=len(existing_summary),
+                    )
+    except TimeoutError:
+        logger.warning("conversation_summary_timeout", conversation_id=conversation_id)
+    except Exception as e:
+        logger.warning(
+            "conversation_summary_failed",
+            conversation_id=conversation_id,
+            error=str(e),
+        )
+
     # 2. LOAD LONG-TERM MEMORY (PostgreSQL) with graceful degradation
     # Timeout must accommodate embedding API latency (1-3s for cold start)
     proactive_context = ""
@@ -350,6 +449,7 @@ async def chat_stream(request: Request, body: ChatRequest):  # noqa: ARG001
                     "conversation_id": conversation_id,
                     "messages": messages,
                     "proactive_context": proactive_context,
+                    "conversation_summary": conversation_summary,
                 },
                 version="v2",
             ):
@@ -401,18 +501,30 @@ async def chat_stream(request: Request, body: ChatRequest):  # noqa: ARG001
                     # Don't fail stream if stats tracking fails
                     logger.debug("stats_tracking_failed", error=str(e))
 
-                # 5. EXTRACT MEMORIES (background, non-blocking)
+                # 5. BACKGROUND TASKS (non-blocking)
+                # Build updated message list for background processing
+                updated_messages = [
+                    *messages,
+                    HumanMessage(content=body.message),
+                    AIMessage(content=full_response),
+                ]
+
+                # 5a. EXTRACT MEMORIES - only if we have enough messages for context
                 if len(messages) >= MIN_MESSAGES_FOR_EXTRACTION:
                     asyncio.create_task(
                         _extract_memories_background(
-                            messages=[
-                                *messages,
-                                HumanMessage(content=body.message),
-                                AIMessage(content=full_response),
-                            ],
+                            messages=updated_messages,
                             conversation_id=conversation_id,
                         )
                     )
+
+                # 5b. COMPACT CONVERSATION - summarize old messages to save context tokens
+                asyncio.create_task(
+                    _compact_conversation_background(
+                        messages=updated_messages,
+                        conversation_id=conversation_id,
+                    )
+                )
 
                 logger.info(
                     "chat_stream_completed",

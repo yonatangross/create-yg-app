@@ -66,6 +66,31 @@ make lint format typecheck
 make migrate
 ```
 
+### Admin & Maintenance
+
+```bash
+# Cache management
+make clear-cache      # Clear Redis cache
+make cache-stats      # View cache statistics
+
+# Memory management
+make clear-memories   # Clear all memories
+make memory-stats     # View memory statistics
+
+# Database access
+make db-shell         # Open PostgreSQL shell
+make redis-shell      # Open Redis shell
+
+# Usage statistics
+make stats            # View overall usage stats
+
+# Development utilities
+make test-file FILE=tests/unit/test_example.py  # Run single test
+make quality          # Check format, lint, and tests
+```
+
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for full configuration options and tuning guide.
+
 ## Project Structure
 
 ```
