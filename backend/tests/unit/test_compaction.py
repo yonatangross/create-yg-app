@@ -12,6 +12,8 @@ from app.shared.services.context.compaction import (
     SessionCompactor,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestCompactionConfig:
     """Tests for CompactionConfig validation."""

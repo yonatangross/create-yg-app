@@ -16,6 +16,8 @@ from app.shared.services.context.compaction import (
 )
 from app.shared.services.context.compiler import CompilerResult, ContextCompiler
 
+pytestmark = pytest.mark.unit
+
 
 class TestCompilerResult:
     """Tests for CompilerResult dataclass."""

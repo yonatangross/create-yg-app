@@ -7,6 +7,8 @@ import pytest
 
 from app.shared.services.stats.usage_stats import UsageStats, get_usage_stats
 
+pytestmark = pytest.mark.unit
+
 
 class TestUsageStats:
     """Tests for UsageStats."""

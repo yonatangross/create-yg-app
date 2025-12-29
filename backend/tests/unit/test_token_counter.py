@@ -3,6 +3,7 @@
 Tests accurate token counting using tiktoken for context management.
 """
 
+import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
 from app.shared.services.context import (
@@ -12,6 +13,8 @@ from app.shared.services.context import (
     get_token_budget_messages,
     truncate_to_tokens,
 )
+
+pytestmark = pytest.mark.unit
 
 
 class TestCountTokens:

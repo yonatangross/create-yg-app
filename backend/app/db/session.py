@@ -107,4 +107,7 @@ async def set_statement_timeout(session: AsyncSession, timeout_ms: int) -> None:
             await set_statement_timeout(session, 5000)  # 5 second timeout
             result = await session.execute(stmt)
     """
-    await session.execute(text(f"SET LOCAL statement_timeout = {timeout_ms}"))
+    await session.execute(
+        text("SET LOCAL statement_timeout = :timeout"),
+        {"timeout": timeout_ms},
+    )

@@ -13,6 +13,8 @@ from app.shared.services.memory.memory_service import (
     calculate_recency_factor,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def create_hybrid_search_mock(memories_with_scores):
     """Create a mock for hybrid search that returns memories with RRF scores.
@@ -26,8 +28,13 @@ def create_hybrid_search_mock(memories_with_scores):
     """
     call_count = [0]  # Track call order in closure
 
-    async def mock_execute(stmt):
-        """Mock execute that handles multiple search phases."""
+    async def mock_execute(stmt, params=None):
+        """Mock execute that handles multiple search phases.
+
+        Args:
+            stmt: The SQL statement to execute
+            params: Optional parameters dict (used by set_statement_timeout)
+        """
         call_count[0] += 1
 
         # Phase 1: SET statement_timeout (first call)
@@ -60,7 +67,9 @@ def create_hybrid_search_mock(memories_with_scores):
         # Phase 4: Fetch full memory records (fourth call)
         if call_count[0] == 4:
             mock_result = MagicMock()
-            mock_result.scalars.return_value.all.return_value = [m for m, _, _ in memories_with_scores]
+            mock_result.scalars.return_value.all.return_value = [
+                m for m, _, _ in memories_with_scores
+            ]
             return mock_result
 
         # Default empty result
@@ -154,9 +163,11 @@ class TestMemoryService:
         mock_memory.last_accessed_at = None
 
         # Mock hybrid search: distance 0.2 = similarity 0.8, with keyword match
-        mock_session.execute = create_hybrid_search_mock([
-            (mock_memory, 0.2, 0.5)  # distance, bm25_score
-        ])
+        mock_session.execute = create_hybrid_search_mock(
+            [
+                (mock_memory, 0.2, 0.5)  # distance, bm25_score
+            ]
+        )
 
         results = await memory_service.search("query text", limit=5, threshold=0.7)
 
@@ -213,9 +224,11 @@ class TestMemoryService:
         mock_memory.last_accessed_at = None
 
         # Mock hybrid search with results
-        mock_session.execute = create_hybrid_search_mock([
-            (mock_memory, 0.1, 0.8)  # High similarity and keyword match
-        ])
+        mock_session.execute = create_hybrid_search_mock(
+            [
+                (mock_memory, 0.1, 0.8)  # High similarity and keyword match
+            ]
+        )
 
         result = await memory_service.proactive_recall("What food do I like?")
 
@@ -421,9 +434,11 @@ class TestMemoryServiceRelevanceDecay:
         mock_memory.last_accessed_at = datetime.now(UTC) - timedelta(days=182)
 
         # Mock hybrid search with results
-        mock_session.execute = create_hybrid_search_mock([
-            (mock_memory, 0.2, 0.5)  # distance, bm25_score
-        ])
+        mock_session.execute = create_hybrid_search_mock(
+            [
+                (mock_memory, 0.2, 0.5)  # distance, bm25_score
+            ]
+        )
 
         results = await memory_service.search("query text", limit=5, threshold=0.7)
 
@@ -466,9 +481,11 @@ class TestMemoryServiceRelevanceDecay:
         mock_memory.last_accessed_at = None
 
         # Mock hybrid search with results
-        mock_session.execute = create_hybrid_search_mock([
-            (mock_memory, 0.1, 0.8)  # distance, bm25_score
-        ])
+        mock_session.execute = create_hybrid_search_mock(
+            [
+                (mock_memory, 0.1, 0.8)  # distance, bm25_score
+            ]
+        )
 
         await memory_service.proactive_recall("What food do I like?")
 
@@ -492,9 +509,11 @@ class TestMemoryServiceRelevanceDecay:
         mock_memory.last_accessed_at = None
 
         # Mock hybrid search with results
-        mock_session.execute = create_hybrid_search_mock([
-            (mock_memory, 0.15, 0.7)  # distance, bm25_score
-        ])
+        mock_session.execute = create_hybrid_search_mock(
+            [
+                (mock_memory, 0.15, 0.7)  # distance, bm25_score
+            ]
+        )
 
         result = await memory_service.proactive_recall_for_agent(
             "Review this code",
@@ -539,10 +558,12 @@ class TestMemoryServiceRelevanceDecay:
         # Mock hybrid search with both memories
         # memory1 has higher similarity (0.9) but is old
         # memory2 has lower similarity (0.7) but is recent
-        mock_session.execute = create_hybrid_search_mock([
-            (memory1, 0.1, 0.5),  # distance 0.1 = similarity 0.9, moderate keyword
-            (memory2, 0.3, 0.8),  # distance 0.3 = similarity 0.7, strong keyword
-        ])
+        mock_session.execute = create_hybrid_search_mock(
+            [
+                (memory1, 0.1, 0.5),  # distance 0.1 = similarity 0.9, moderate keyword
+                (memory2, 0.3, 0.8),  # distance 0.3 = similarity 0.7, strong keyword
+            ]
+        )
 
         results = await memory_service.search("query", limit=5, threshold=0.6)
 

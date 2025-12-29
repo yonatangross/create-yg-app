@@ -35,15 +35,26 @@ test:
 	cd frontend && npm test
 
 test-unit:
-	cd backend && uv run pytest tests/unit -v
+	cd backend && uv run pytest tests/unit -m unit -v
+
+test-unit-fast:
+	cd backend && uv run pytest tests/unit -m "unit and not slow" -q
 
 test-integration:
 	docker compose -f docker-compose.test.yml up -d
-	cd backend && uv run pytest tests/integration -v
+	cd backend && uv run pytest tests/integration -m integration -v
 	docker compose -f docker-compose.test.yml down
 
+test-all:
+	cd backend && uv run pytest tests/ -v
+	cd frontend && npm test
+
 coverage:
-	cd backend && uv run pytest --cov=app --cov-report=html
+	cd backend && uv run pytest tests/unit -m unit --cov=app --cov-report=html --cov-report=term-missing
+	@echo "Coverage report: backend/htmlcov/index.html"
+
+coverage-all:
+	cd backend && uv run pytest tests/ --cov=app --cov-report=html --cov-report=json
 	@echo "Coverage report: backend/htmlcov/index.html"
 
 e2e:

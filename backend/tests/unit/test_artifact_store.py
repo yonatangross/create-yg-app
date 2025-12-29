@@ -17,6 +17,8 @@ import pytest
 
 from app.shared.services.documents import Artifact, ArtifactSection, ArtifactStore
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def artifact_store() -> ArtifactStore:

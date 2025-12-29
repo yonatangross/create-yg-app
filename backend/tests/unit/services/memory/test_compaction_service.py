@@ -16,6 +16,8 @@ from app.shared.services.memory.compaction_service import (
     compact_if_needed,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestCompactionConfig:
     """Tests for CompactionConfig dataclass."""

@@ -68,7 +68,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./backend
-        run: uv sync --frozen --no-install-project
+        run: uv sync --frozen --no-install-project --extra dev
 
       - name: Run ruff linting
         working-directory: ./backend
@@ -99,7 +99,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./backend
-        run: uv sync --frozen --no-install-project
+        run: uv sync --frozen --no-install-project --extra dev
 
       - name: Run ty type check
         working-directory: ./backend

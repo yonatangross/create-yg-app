@@ -271,9 +271,7 @@ class MemoryService:
 
         ts_query = func.to_tsquery(
             "english",
-            func.replace(
-                func.plainto_tsquery("english", query).cast(Text), " & ", " | "
-            ),
+            func.replace(func.plainto_tsquery("english", query).cast(Text), " & ", " | "),
         )
 
         keyword_stmt = select(

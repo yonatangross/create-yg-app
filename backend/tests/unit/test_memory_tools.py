@@ -8,6 +8,8 @@ from app.db.models.memory import AgentMemory, MemoryType
 from app.shared.services.memory.memory_service import MemorySearchResult
 from app.shared.services.memory.memory_tools import search_memory
 
+pytestmark = pytest.mark.unit
+
 
 class TestSearchMemoryTool:
     """Tests for search_memory LangChain tool."""

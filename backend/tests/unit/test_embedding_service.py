@@ -2,7 +2,6 @@
 
 import contextlib
 import math
-import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -16,6 +15,8 @@ from app.shared.services.memory.embedding_service import (
     get_embedding_service,
     normalize_vector,
 )
+
+pytestmark = pytest.mark.unit
 
 
 class TestNormalizeVector:
@@ -197,7 +198,10 @@ class TestEmbeddingService:
 
 
 class TestEmbeddingServiceRetry:
-    """Tests for retry logic with exponential backoff."""
+    """Tests for retry logic with exponential backoff.
+
+    Note: asyncio.sleep is automatically mocked by tests/unit/conftest.py
+    """
 
     @pytest.fixture
     def embedding_service(self):
@@ -555,7 +559,11 @@ class TestBatchAPIEmbedding:
 
     @pytest.mark.asyncio
     async def test_batch_api_exponential_backoff(self, batch_service, mock_batch_client):
-        """Test batch API uses exponential backoff for polling."""
+        """Test batch API uses exponential backoff for polling.
+
+        Verifies asyncio.sleep is called with exponentially increasing delays.
+        Note: asyncio.sleep is mocked by unit conftest, so we verify call args.
+        """
         in_progress_batch = MagicMock()
         in_progress_batch.status = "in_progress"
 
@@ -570,12 +578,21 @@ class TestBatchAPIEmbedding:
 
         batch_service.BATCH_POLL_INTERVAL = 1  # 1 second base
 
-        start = time.time()
-        await batch_service.generate_embeddings_batch_api(["Test"])
-        duration = time.time() - start
+        # Capture sleep calls to verify exponential backoff
+        sleep_calls = []
 
-        # Should wait: 1s + 2s + 4s = 7s total (with some tolerance)
-        assert duration >= 6  # Allow for some variance
+        async def capture_sleep(seconds):
+            sleep_calls.append(seconds)
+            # Don't actually wait - just record the call
+
+        with patch("asyncio.sleep", side_effect=capture_sleep):
+            await batch_service.generate_embeddings_batch_api(["Test"])
+
+        # Verify exponential backoff: 1s, 2s, 4s (base * 2^attempt)
+        assert len(sleep_calls) == 3, f"Expected 3 sleep calls, got {len(sleep_calls)}"
+        assert sleep_calls[0] == 1, f"First wait should be 1s, got {sleep_calls[0]}"
+        assert sleep_calls[1] == 2, f"Second wait should be 2s, got {sleep_calls[1]}"
+        assert sleep_calls[2] == 4, f"Third wait should be 4s, got {sleep_calls[2]}"
 
     @pytest.mark.asyncio
     async def test_batch_api_returns_normalized_vectors(self, batch_service):

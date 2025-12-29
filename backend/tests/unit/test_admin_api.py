@@ -10,18 +10,32 @@ from app.api.v1.admin import verify_admin_key
 from app.core.config import settings
 from app.db.models.memory import MemoryType
 
+# Set a test API key for consistent testing
+TEST_ADMIN_KEY = "test-admin-key-for-unit-tests"
+
+
+pytestmark = pytest.mark.unit
+
+
+@pytest.fixture(autouse=True)
+def mock_admin_api_key():
+    """Auto-applied fixture to ensure ADMIN_API_KEY is set for all tests."""
+    with patch.object(settings, "ADMIN_API_KEY", TEST_ADMIN_KEY):
+        yield
+
+
 # --- Auth Tests ---
 
 
 @pytest.mark.asyncio
-async def test_verify_admin_key_valid():
+async def test_verify_admin_key_valid(mock_admin_api_key):
     """Test admin key verification with valid key."""
-    # Should not raise
-    await verify_admin_key(x_admin_key=settings.ADMIN_API_KEY)
+    # autouse fixture sets ADMIN_API_KEY to TEST_ADMIN_KEY
+    await verify_admin_key(x_admin_key=TEST_ADMIN_KEY)
 
 
 @pytest.mark.asyncio
-async def test_verify_admin_key_invalid():
+async def test_verify_admin_key_invalid(mock_admin_api_key):
     """Test admin key verification with invalid key."""
     with pytest.raises(HTTPException) as exc_info:
         await verify_admin_key(x_admin_key="wrong-key")
@@ -31,12 +45,39 @@ async def test_verify_admin_key_invalid():
 
 
 @pytest.mark.asyncio
-async def test_verify_admin_key_missing():
-    """Test admin key verification with missing key."""
+async def test_verify_admin_key_missing(mock_admin_api_key):
+    """Test admin key verification with missing key when key is configured."""
     with pytest.raises(HTTPException) as exc_info:
         await verify_admin_key(x_admin_key=None)
 
     assert exc_info.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_verify_admin_key_dev_mode_no_key():
+    """Test admin key verification allows access in dev mode without key configured.
+
+    Note: This test uses its own ADMIN_API_KEY patch to override the autouse fixture.
+    """
+    with patch.object(settings, "ADMIN_API_KEY", None):
+        with patch.object(settings, "ENVIRONMENT", "development"):
+            # Should not raise - dev mode allows access without key
+            await verify_admin_key(x_admin_key=None)
+
+
+@pytest.mark.asyncio
+async def test_verify_admin_key_production_no_key_configured():
+    """Test admin key verification fails in production without key configured.
+
+    Note: This test uses its own ADMIN_API_KEY patch to override the autouse fixture.
+    """
+    with patch.object(settings, "ADMIN_API_KEY", None):
+        with patch.object(settings, "ENVIRONMENT", "production"):
+            with pytest.raises(HTTPException) as exc_info:
+                await verify_admin_key(x_admin_key=None)
+
+            assert exc_info.value.status_code == 500
+            assert "not configured" in exc_info.value.detail
 
 
 # --- Memory Endpoints Tests (with mocked DB) ---
@@ -78,7 +119,7 @@ def test_list_memories_empty(client, mock_db_session):
         try:
             response = client.get(
                 "/api/v1/admin/memories",
-                headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+                headers={"X-Admin-Key": TEST_ADMIN_KEY},
             )
             assert response.status_code == 200
             data = response.json()
@@ -100,7 +141,7 @@ def test_list_memories_with_pagination(client, mock_db_session):
     try:
         response = client.get(
             "/api/v1/admin/memories?limit=10&offset=5",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
         data = response.json()
@@ -120,7 +161,7 @@ def test_list_memories_invalid_type(client, mock_db_session):
     try:
         response = client.get(
             "/api/v1/admin/memories?memory_type=invalid_type",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 400
         assert "Invalid memory_type" in response.json()["detail"]
@@ -138,7 +179,7 @@ def test_list_memories_with_filters(client, mock_db_session):
     try:
         response = client.get(
             f"/api/v1/admin/memories?memory_type={MemoryType.USER_PREFERENCE.value}&conversation_id=test123",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
     finally:
@@ -161,7 +202,7 @@ def test_get_memory_not_found(client, mock_db_session):
         memory_id = uuid.uuid4()
         response = client.get(
             f"/api/v1/admin/memories/{memory_id}",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 404
     finally:
@@ -184,7 +225,7 @@ def test_delete_memory_not_found(client, mock_db_session):
         memory_id = uuid.uuid4()
         response = client.delete(
             f"/api/v1/admin/memories/{memory_id}",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 404
     finally:
@@ -201,7 +242,7 @@ def test_clear_memories_no_filters(client, mock_db_session):
     try:
         response = client.delete(
             "/api/v1/admin/memories",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 400
         assert "At least one filter" in response.json()["detail"]
@@ -224,7 +265,7 @@ def test_clear_memories_with_conversation_id(client, mock_db_session):
     try:
         response = client.delete(
             "/api/v1/admin/memories?conversation_id=test123",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
         data = response.json()
@@ -248,7 +289,7 @@ def test_clear_memories_with_type(client, mock_db_session):
     try:
         response = client.delete(
             f"/api/v1/admin/memories?memory_type={MemoryType.LEARNED_FACT.value}",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
     finally:
@@ -269,7 +310,7 @@ def test_clear_memories_with_older_than(client, mock_db_session):
     try:
         response = client.delete(
             "/api/v1/admin/memories?older_than_days=30",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
     finally:
@@ -286,7 +327,7 @@ def test_clear_memories_invalid_type(client, mock_db_session):
     try:
         response = client.delete(
             "/api/v1/admin/memories?memory_type=invalid",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 400
     finally:
@@ -319,7 +360,7 @@ def test_memory_stats(client, mock_db_session):
     try:
         response = client.get(
             "/api/v1/admin/memories/stats",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
         data = response.json()
@@ -356,7 +397,7 @@ async def test_cache_stats_success(client):
 
         response = client.get(
             "/api/v1/admin/cache/stats",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
         data = response.json()
@@ -376,7 +417,7 @@ async def test_clear_cache_all(client):
 
         response = client.post(
             "/api/v1/admin/cache/clear",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
         data = response.json()
@@ -400,7 +441,7 @@ async def test_clear_cache_with_prefix(client):
 
         response = client.post(
             "/api/v1/admin/cache/clear?prefix=embed:",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
         data = response.json()
@@ -430,7 +471,7 @@ async def test_embedding_cache_stats(client):
 
         response = client.get(
             "/api/v1/admin/cache/embedding-stats",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
         data = response.json()
@@ -453,7 +494,7 @@ def test_system_info_success(client):
     """Test system info with valid auth."""
     response = client.get(
         "/api/v1/admin/info",
-        headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+        headers={"X-Admin-Key": TEST_ADMIN_KEY},
     )
     assert response.status_code == 200
     data = response.json()
@@ -488,7 +529,7 @@ async def test_usage_stats_success(client):
 
         response = client.get(
             "/api/v1/admin/stats/usage",
-            headers={"X-Admin-Key": settings.ADMIN_API_KEY},
+            headers={"X-Admin-Key": TEST_ADMIN_KEY},
         )
         assert response.status_code == 200
         data = response.json()

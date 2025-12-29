@@ -1,10 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useChatStore } from "../stores/chatStore";
+import { createLogger } from "@/lib/logger";
 import type { MemoryContext } from "@/types";
 
 export function useChat() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const abortControllerRef = useRef<AbortController | null>(null);
+
+	// Create logger with conversation context
+	const logger = useMemo(() => createLogger("useChat"), []);
 
 	const {
 		addMessage,
@@ -15,8 +20,37 @@ export function useChat() {
 		setMemoryContext,
 	} = useChatStore();
 
+	// Cleanup on unmount
+	useEffect(() => {
+		logger.debug("hook_mounted");
+		return () => {
+			logger.debug("hook_unmounted");
+			abortControllerRef.current?.abort();
+		};
+	}, [logger]);
+
+	const cancelRequest = useCallback(() => {
+		if (abortControllerRef.current) {
+			logger.info("request_cancelled");
+			abortControllerRef.current.abort();
+			abortControllerRef.current = null;
+			setIsLoading(false);
+			setStreaming(false);
+		}
+	}, [logger, setStreaming]);
+
 	const sendMessage = useCallback(
 		async (content: string) => {
+			// Abort any existing request
+			if (abortControllerRef.current) {
+				logger.debug("aborting_previous_request");
+				abortControllerRef.current.abort();
+			}
+			abortControllerRef.current = new AbortController();
+
+			const startTime = performance.now();
+			logger.info("message_send_started", { message_length: content.length });
+
 			setIsLoading(true);
 			setError(null);
 
@@ -35,6 +69,7 @@ export function useChat() {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ message: content }),
+					signal: abortControllerRef.current.signal,
 				});
 
 				if (!response.ok) {
@@ -50,6 +85,7 @@ export function useChat() {
 
 				let fullContent = "";
 				let currentEvent = "";
+				let tokenCount = 0;
 
 				while (true) {
 					const { done, value } = await reader.read();
@@ -75,20 +111,23 @@ export function useChat() {
 
 								// Handle context event before tokens
 								if (currentEvent === "context" && parsed.memory_context) {
-									setMemoryContext(
-										parsed.memory_context as MemoryContext,
-										assistantId,
-									);
+									const memoryContext = parsed.memory_context as MemoryContext;
+									logger.debug("memory_context_received", {
+										memory_count: memoryContext.memories?.length ?? 0,
+									});
+									setMemoryContext(memoryContext, assistantId);
 								}
 								// Handle token event
 								else if (currentEvent === "token" && parsed.chunk) {
 									fullContent += parsed.chunk;
+									tokenCount++;
 									appendStreamingContent(parsed.chunk);
 									updateMessage(assistantId, fullContent);
 								}
 								// Fallback for data without explicit event type
 								else if (parsed.chunk) {
 									fullContent += parsed.chunk;
+									tokenCount++;
 									appendStreamingContent(parsed.chunk);
 									updateMessage(assistantId, fullContent);
 								}
@@ -96,6 +135,7 @@ export function useChat() {
 								// Not JSON, might be plain text token
 								if (currentEvent === "token" || currentEvent === "") {
 									fullContent += data;
+									tokenCount++;
 									appendStreamingContent(data);
 									updateMessage(assistantId, fullContent);
 								}
@@ -103,8 +143,25 @@ export function useChat() {
 						}
 					}
 				}
+
+				const duration = Math.round(performance.now() - startTime);
+				logger.info("message_send_completed", {
+					duration_ms: duration,
+					response_length: fullContent.length,
+					token_count: tokenCount,
+				});
 			} catch (err) {
+				// Don't show error for intentional aborts
+				if (err instanceof DOMException && err.name === "AbortError") {
+					logger.debug("request_aborted");
+					return;
+				}
 				const message = err instanceof Error ? err.message : "Unknown error";
+				const duration = Math.round(performance.now() - startTime);
+				logger.error("message_send_failed", {
+					error: err instanceof Error ? err : new Error(message),
+					duration_ms: duration,
+				});
 				setError(message);
 				updateMessage(assistantId, `Error: ${message}`);
 			} finally {
@@ -113,6 +170,7 @@ export function useChat() {
 			}
 		},
 		[
+			logger,
 			addMessage,
 			updateMessage,
 			setStreaming,
@@ -124,6 +182,7 @@ export function useChat() {
 
 	return {
 		sendMessage,
+		cancelRequest,
 		isLoading,
 		error,
 	};

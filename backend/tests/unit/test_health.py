@@ -3,6 +3,10 @@
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 
 def test_health_check(client):
     """Test health check endpoint."""

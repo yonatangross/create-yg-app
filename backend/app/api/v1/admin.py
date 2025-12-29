@@ -1,13 +1,16 @@
 """Admin API endpoints for managing memories and cache."""
 
+import secrets
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import redis.asyncio as redis
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +24,9 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+# Rate limiter for admin endpoints
+limiter = Limiter(key_func=get_remote_address)
+
 
 # --- Auth Dependency ---
 
@@ -28,13 +34,29 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 async def verify_admin_key(x_admin_key: Annotated[str | None, Header()] = None) -> None:
     """Verify admin API key from X-Admin-Key header.
 
+    In development mode without ADMIN_API_KEY set, any key (or no key) is accepted.
+    In production, ADMIN_API_KEY must be set and match the provided key.
+
     Args:
         x_admin_key: API key from request header
 
     Raises:
         HTTPException: 403 if key is missing or invalid
     """
-    if not x_admin_key or x_admin_key != settings.ADMIN_API_KEY:
+    # If ADMIN_API_KEY is not set
+    if not settings.ADMIN_API_KEY:
+        if settings.is_production():
+            logger.error("admin_key_not_configured_in_production")
+            raise HTTPException(
+                status_code=500,
+                detail="Admin API key not configured. Set ADMIN_API_KEY environment variable.",
+            )
+        # Development mode: allow access without key (with warning)
+        logger.warning("admin_access_without_key_dev_mode")
+        return
+
+    # Verify the key matches using constant-time comparison
+    if not x_admin_key or not secrets.compare_digest(x_admin_key, settings.ADMIN_API_KEY):
         logger.warning("admin_auth_failed", provided_key=bool(x_admin_key))
         raise HTTPException(
             status_code=403,
@@ -105,7 +127,9 @@ class SystemInfoResponse(BaseModel):
 
 
 @router.get("/memories/stats", response_model=MemoryStatsResponse)
+@limiter.limit("30/minute")
 async def memory_stats(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     _auth: None = Depends(verify_admin_key),
 ) -> MemoryStatsResponse:
@@ -151,7 +175,9 @@ async def memory_stats(
 
 
 @router.get("/memories", response_model=MemoryListResponse)
+@limiter.limit("30/minute")
 async def list_memories(
+    request: Request,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     memory_type: str | None = Query(default=None),
@@ -271,7 +297,9 @@ async def get_memory(
 
 
 @router.delete("/memories/{memory_id}", response_model=DeleteResponse)
+@limiter.limit("10/minute")
 async def delete_memory(
+    request: Request,
     memory_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     _auth: None = Depends(verify_admin_key),
@@ -313,7 +341,9 @@ async def delete_memory(
 
 
 @router.delete("/memories", response_model=DeleteResponse)
+@limiter.limit("5/minute")
 async def clear_memories(
+    request: Request,
     conversation_id: str | None = Query(default=None),
     memory_type: str | None = Query(default=None),
     older_than_days: int | None = Query(default=None, ge=1),
@@ -442,8 +472,10 @@ async def cache_stats(
 
 
 @router.post("/cache/clear", response_model=DeleteResponse)
+@limiter.limit("5/minute")
 async def clear_cache(
-    prefix: str | None = Query(default=None),
+    request: Request,
+    prefix: str | None = Query(default=None, max_length=100, pattern=r"^[a-zA-Z0-9_:\-]*$"),
     _auth: None = Depends(verify_admin_key),
 ) -> DeleteResponse:
     """Clear cache entries (optionally by prefix).
@@ -593,7 +625,9 @@ async def get_usage_statistics(
 
 
 @router.post("/stats/usage/reset")
+@limiter.limit("2/minute")
 async def reset_usage_statistics(
+    request: Request,
     _auth: None = Depends(verify_admin_key),
 ) -> dict:
     """Reset all usage statistics.

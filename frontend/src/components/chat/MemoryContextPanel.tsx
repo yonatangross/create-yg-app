@@ -4,14 +4,14 @@ import type { MemoryItem } from "@/types";
 
 interface MemoryContextPanelProps {
 	memories: MemoryItem[];
-	isExpanded?: boolean;
+	defaultExpanded?: boolean;
 }
 
 export function MemoryContextPanel({
 	memories,
-	isExpanded: initialExpanded = false,
+	defaultExpanded = false,
 }: MemoryContextPanelProps) {
-	const [isExpanded, setIsExpanded] = useState(initialExpanded);
+	const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
 	if (memories.length === 0) {
 		return null;
@@ -22,6 +22,8 @@ export function MemoryContextPanel({
 			<button
 				type="button"
 				onClick={() => setIsExpanded(!isExpanded)}
+				aria-expanded={isExpanded}
+				aria-label={`${isExpanded ? "Collapse" : "Expand"} memory context with ${memories.length} items`}
 				className="flex w-full items-center justify-between gap-2 px-4 py-3 text-sm font-medium hover:bg-muted/70 transition-colors"
 			>
 				<div className="flex items-center gap-2">
@@ -41,9 +43,9 @@ export function MemoryContextPanel({
 			{isExpanded && (
 				<div className="border-t border-muted bg-background/50 px-4 py-3">
 					<div className="space-y-3">
-						{memories.map((memory, index) => (
+						{memories.map((memory) => (
 							<div
-								key={`${memory.type}-${index}`}
+								key={`${memory.type}-${memory.content.slice(0, 50)}`}
 								className="rounded-md bg-muted/30 p-3 text-sm"
 							>
 								<div className="mb-1 flex items-center gap-2">

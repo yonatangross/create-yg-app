@@ -7,6 +7,8 @@ import pytest
 
 from app.shared.services.memory.embedding_cache import EmbeddingCache, get_embedding_cache
 
+pytestmark = pytest.mark.unit
+
 
 class TestEmbeddingCache:
     """Tests for EmbeddingCache."""

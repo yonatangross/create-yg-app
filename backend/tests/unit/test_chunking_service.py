@@ -16,6 +16,8 @@ import pytest
 
 from app.shared.services.documents import ChunkingConfig, ChunkingService, ChunkText
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def chunking_service() -> ChunkingService:

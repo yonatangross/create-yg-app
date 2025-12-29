@@ -12,6 +12,8 @@ import contextlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+pytestmark = [pytest.mark.integration, pytest.mark.slow]
 from httpx import ASGITransport, AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
 
@@ -45,11 +47,7 @@ class TestChatCompactionIntegration:
             query = state.get("query", "")
             conversation_summary = state.get("conversation_summary", "")
 
-            response = (
-                f"With summary: {query}"
-                if conversation_summary
-                else f"Received: {query}"
-            )
+            response = f"With summary: {query}" if conversation_summary else f"Received: {query}"
 
             # Yield token events
             for word in response.split():

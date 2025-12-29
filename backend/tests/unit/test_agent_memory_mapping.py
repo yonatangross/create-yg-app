@@ -9,6 +9,8 @@ from app.shared.services.memory.agent_memory_mapping import (
     should_include_memory_type,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestAgentMemoryMapping:
     """Tests for agent memory type filtering."""
