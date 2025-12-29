@@ -41,6 +41,22 @@ open http://localhost:5183
 | Langfuse | http://localhost:3010 | LLM Observability |
 | MinIO Console | http://localhost:9011 | Blob Storage |
 
+### Port Allocation
+
+YG Starter uses offset ports to avoid conflicts with other local projects:
+
+| Service | YG Starter | Standard | Offset |
+|---------|------------|----------|--------|
+| PostgreSQL | **5447** | 5432 | +15 |
+| Redis | **6390** | 6379 | +11 |
+| Backend | **8600** | 8000 | +600 |
+| Frontend | **5183** | 5173 | +10 |
+| Langfuse | **3010** | 3000 | +10 |
+| MinIO API | **9010** | 9000 | +10 |
+| MinIO Console | **9011** | 9001 | +10 |
+
+> **Note**: All ports are configurable. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for details.
+
 ## The init.sh Script
 
 The initialization script:

@@ -205,10 +205,26 @@ Production (Docker Compose / K8s)
 4. **Streaming**: SSE for real-time responses
 5. **Circuit Breaker**: Fail fast on provider issues
 
+## Port Configuration
+
+All services use offset ports to avoid conflicts with other local projects:
+
+| Service | External Port | Internal Port |
+|---------|--------------|---------------|
+| Frontend | 5183 | 5173 |
+| Backend | 8600 | 8600 |
+| PostgreSQL | 5447 | 5432 |
+| Redis | 6390 | 6379 |
+| Langfuse | 3010 | 3000 |
+| MinIO | 9010-9011 | 9000-9001 |
+
+See [CONFIGURATION.md](CONFIGURATION.md) for full port details and multi-project setup.
+
 ---
 
 ## Related Documents
 
 - `CLAUDE.md` - AI development instructions
+- `CONFIGURATION.md` - Port configuration and tuning guide
 - `.claude/skills/` - Implementation patterns
 - `.claude/instructions/` - Development rules

@@ -157,17 +157,34 @@ make quality
 
 ## Port Configuration
 
-Default ports used by services:
+YG Starter uses offset ports to avoid conflicts with other local projects (like SkillForge or default Docker services).
 
-| Service | Port | Environment Variable |
-|---------|------|---------------------|
-| Frontend | 5183 | `VITE_PORT` |
-| Backend API | 8600 | `PORT` |
-| PostgreSQL | 5447 | `POSTGRES_PORT` |
-| Redis | 6390 | `REDIS_PORT` |
-| Langfuse | 3010 | `LANGFUSE_PORT` |
-| MinIO | 9000 | `MINIO_PORT` |
-| MinIO Console | 9011 | `MINIO_CONSOLE_PORT` |
+### Default Ports
+
+| Service | YG Starter | Standard | Offset | Internal |
+|---------|------------|----------|--------|----------|
+| Frontend | **5183** | 5173 | +10 | 5173 |
+| Backend API | **8600** | 8000 | +600 | 8600 |
+| PostgreSQL | **5447** | 5432 | +15 | 5432 |
+| Redis | **6390** | 6379 | +11 | 6379 |
+| Langfuse Web | **3010** | 3000 | +10 | 3000 |
+| MinIO API | **9010** | 9000 | +10 | 9000 |
+| MinIO Console | **9011** | 9001 | +10 | 9001 |
+
+### Port Comparison (YG Starter vs SkillForge)
+
+If running both projects simultaneously:
+
+| Service | YG Starter | SkillForge | Delta |
+|---------|------------|------------|-------|
+| PostgreSQL | 5447 | 5437 | +10 |
+| Redis | 6390 | 6380 | +10 |
+| Backend | 8600 | 8500 | +100 |
+| Frontend | 5183 | 5173 | +10 |
+| Langfuse | 3010 | 3000 | +10 |
+| MinIO | 9010-9011 | 9000-9001 | +10 |
+
+> **No conflicts**: Both projects can run simultaneously without port collisions.
 
 ## Observability
 
