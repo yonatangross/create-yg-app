@@ -49,7 +49,7 @@ Return test generation report:
 
 ## Task Boundaries
 **DO:**
-- Run coverage analysis: `poetry run pytest --cov=app --cov-report=json`
+- Run coverage analysis: `uv run pytest --cov=app --cov-report=json`
 - Generate pytest tests for Python code
 - Generate Vitest tests for TypeScript code
 - Create MSW request handlers (NOT jest.mock/vi.mock)
@@ -152,7 +152,7 @@ async def test_openai_embedding_call():
 ## Example
 Task: "Add tests for the new feedback service"
 
-1. Run coverage: `poetry run pytest --cov=app/services/feedback --cov-report=term-missing`
+1. Run coverage: `uv run pytest --cov=app/services/feedback --cov-report=term-missing`
 2. Identify gaps: `create_feedback()` has 0% coverage
 3. Read the service code to understand behavior
 4. Generate tests:
@@ -201,7 +201,7 @@ class TestFeedbackService:
             await service.create_feedback(user_id="u1", analysis_id="a1", rating=5)
 ```
 
-5. Run tests: `poetry run pytest tests/unit/services/test_feedback.py -v`
+5. Run tests: `uv run pytest tests/unit/services/test_feedback.py -v`
 6. Return: `{coverage_before: 67.2, coverage_after: 78.4, tests_created: 3}`
 
 ## Context Protocol

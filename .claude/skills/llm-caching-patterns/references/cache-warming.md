@@ -240,10 +240,10 @@ if __name__ == "__main__":
 ```bash
 # One-time warming
 cd backend
-poetry run python scripts/warm_semantic_cache.py
+uv run python scripts/warm_semantic_cache.py
 
 # Automated daily warming (cron)
-0 2 * * * cd /app/backend && poetry run python scripts/warm_semantic_cache.py
+0 2 * * * cd /app/backend && uv run python scripts/warm_semantic_cache.py
 ```
 
 ## Monitoring Warm Cache Effectiveness

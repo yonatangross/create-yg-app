@@ -246,4 +246,4 @@ y: float | None = (
 
 - **Ty documentation**: Coming soon (Rust-based type checker for Python)
 - **Related skill**: `references/typescript-5-features.md` (similar strict patterns)
-- **YG Starter usage**: Backend agent result processing (`backend/app/workflows/nodes/`)
+- **this project usage**: Backend agent result processing (`backend/app/workflows/nodes/`)

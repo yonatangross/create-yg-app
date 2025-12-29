@@ -1,7 +1,7 @@
 """
-Queue Captured Content to SkillForge
+Queue Captured Content to RAG System
 
-After capturing content with browser automation, send it to SkillForge's
+After capturing content with browser automation, send it to RAG System's
 analysis pipeline using this integration template.
 """
 
@@ -13,7 +13,7 @@ import httpx
 
 @dataclass
 class AnalysisRequest:
-    """Request to queue content for SkillForge analysis."""
+    """Request to queue content for RAG System analysis."""
     url: str
     content: str
     title: Optional[str] = None
@@ -22,18 +22,18 @@ class AnalysisRequest:
 
 @dataclass
 class AnalysisResponse:
-    """Response from SkillForge analysis API."""
+    """Response from RAG System analysis API."""
     analysis_id: str
     status: str
     sse_url: str
 
 
-class SkillForgeClient:
+class RAG SystemClient:
     """
-    Client for sending captured content to SkillForge analysis pipeline.
+    Client for sending captured content to RAG System analysis pipeline.
 
     Usage:
-        client = SkillForgeClient()
+        client = RAG SystemClient()
 
         # Queue single content
         result = await client.queue_for_analysis(
@@ -61,7 +61,7 @@ class SkillForgeClient:
         title: Optional[str] = None
     ) -> AnalysisResponse:
         """
-        Queue captured content for SkillForge analysis.
+        Queue captured content for RAG System analysis.
 
         Args:
             url: Original source URL
@@ -174,7 +174,7 @@ async def example_single_capture():
     content = "Captured content from the page..."
 
     # Step 2: Queue for analysis
-    client = SkillForgeClient()
+    client = RAG SystemClient()
     result = await client.queue_for_analysis(url=url, content=content)
 
     print(f"Queued analysis: {result.analysis_id}")
@@ -200,7 +200,7 @@ async def example_batch_capture():
         ("https://docs.example.com/api", "API reference...", "API Reference"),
     ]
 
-    client = SkillForgeClient()
+    client = RAG SystemClient()
     results = await client.queue_batch(pages)
 
     print(f"Queued {len(results)} pages for analysis")
@@ -213,7 +213,7 @@ async def example_batch_capture():
 
 async def example_with_browser_capture():
     """
-    Full workflow: browser capture → SkillForge analysis.
+    Full workflow: browser capture → RAG System analysis.
 
     This shows the complete integration pattern.
     """
@@ -228,7 +228,7 @@ async def example_with_browser_capture():
         return
 
     # Step 2: Queue for analysis
-    client = SkillForgeClient()
+    client = RAG SystemClient()
     result = await client.queue_for_analysis(
         url=captured.url,
         content=captured.content,

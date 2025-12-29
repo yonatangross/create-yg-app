@@ -101,7 +101,7 @@ Task(
 
   Run checks:
   - cd frontend && npm run typecheck
-  - cd backend && poetry run ty check app/
+  - cd backend && uv run ty check app/
 
   Output: Type issues with fix suggestions.""",
   run_in_background=true
@@ -148,7 +148,7 @@ Task(
   5. Integration test coverage
 
   Run coverage analysis:
-  - cd backend && poetry run pytest tests/unit/ --cov=app --cov-report=term-missing
+  - cd backend && uv run pytest tests/unit/ --cov=app --cov-report=term-missing
   - cd frontend && npm test -- --coverage
 
   Check:
@@ -243,10 +243,10 @@ Task(
 ```bash
 # Backend validation
 cd backend
-poetry run ruff format --check app/
-poetry run ruff check app/
-poetry run ty check app/ --exclude "app/evaluation/*"
-poetry run pytest tests/unit/ -v --tb=short 2>&1 | tee /tmp/pr_backend_tests.log
+uv run ruff format --check app/
+uv run ruff check app/
+uv run ty check app/ --exclude "app/evaluation/*"
+uv run pytest tests/unit/ -v --tb=short 2>&1 | tee /tmp/pr_backend_tests.log
 
 # Frontend validation
 cd frontend

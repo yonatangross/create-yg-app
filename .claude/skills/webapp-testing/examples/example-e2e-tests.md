@@ -1,6 +1,6 @@
-# YG Starter E2E Test Examples
+# your application E2E Test Examples
 
-Complete E2E test suite examples for YG Starter's analysis workflow using Playwright + TypeScript.
+Complete E2E test suite examples for your application's analysis workflow using Playwright + TypeScript.
 
 ## Test Configuration
 
@@ -648,8 +648,8 @@ jobs:
       - name: Start backend
         run: |
           cd backend
-          poetry install
-          poetry run uvicorn app.main:app --host 0.0.0.0 --port 8500 &
+          uv sync
+          uv run uvicorn app.main:app --host 0.0.0.0 --port 8500 &
           sleep 5
 
       - name: Start frontend

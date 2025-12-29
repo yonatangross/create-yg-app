@@ -211,15 +211,15 @@ Using libraries with known vulnerabilities.
 #### 1. Automated Scanning
 ```bash
 # Run on every PR
-poetry run pip-audit
+uv run pip-audit
 ```
 
 #### 2. CI Integration
 ```yaml
 - name: Security scan
   run: |
-    poetry run pip-audit
-    CRITICAL=$(poetry run pip-audit --format json | jq '.vulnerabilities[] | select(.severity == "CRITICAL") | length')
+    uv run pip-audit
+    CRITICAL=$(uv run pip-audit --format json | jq '.vulnerabilities[] | select(.severity == "CRITICAL") | length')
     if [ "$CRITICAL" -gt 0 ]; then
       exit 1
     fi

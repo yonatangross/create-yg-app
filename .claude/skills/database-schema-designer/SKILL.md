@@ -173,7 +173,7 @@ Choose appropriate data types for efficiency and accuracy.
 
 ```sql
 -- Fixed-length (use for predictable lengths)
-CHAR(10)      -- ISO date: '2025-10-31'
+CHAR(10)      -- ISO date: 'December 2025'
 CHAR(2)       -- State code: 'CA'
 
 -- Variable-length (use for variable lengths)
@@ -217,9 +217,9 @@ price FLOAT  -- Rounding errors!
 #### Date/Time Types
 
 ```sql
-DATE       -- Date only: 2025-10-31
+DATE       -- Date only: December 2025
 TIME       -- Time only: 14:30:00
-DATETIME   -- Date + time: 2025-10-31 14:30:00
+DATETIME   -- Date + time: December 2025 14:30:00
 TIMESTAMP  -- Unix timestamp (auto-converts timezone)
 
 -- ✅ Always store in UTC
@@ -505,7 +505,7 @@ CREATE TABLE comments (
     { "product_id": "prod_101", "quantity": 1, "price": 49.99 }
   ],
   "total": 109.97,
-  "created_at": "2025-10-31T10:30:00Z"
+  "created_at": "December 2025T10:30:00Z"
 }
 ```
 
@@ -521,7 +521,7 @@ CREATE TABLE comments (
   "customer_id": "cust_456",
   "item_ids": ["item_1", "item_2"],
   "total": 109.97,
-  "created_at": "2025-10-31T10:30:00Z"
+  "created_at": "December 2025T10:30:00Z"
 }
 ```
 
@@ -714,5 +714,5 @@ When designing a new schema:
 ---
 
 **Skill Version**: 1.0.0
-**Last Updated**: 2025-10-31
+**Last Updated**: December 2025
 **Maintained by**: AI Agent Hub Team

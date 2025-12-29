@@ -1,21 +1,22 @@
-# YG Starter Monitoring Dashboard - Real Implementation
+# AI-Powered SaaS Monitoring Dashboard - Real Implementation
 
-This document shows YG Starter's actual monitoring setup including metrics, dashboards, and alerting rules.
+This document shows a production AI application's monitoring setup including metrics, dashboards, and alerting rules (December 2025).
 
 ## Overview
 
-**YG Starter Monitoring Stack:**
+**Monitoring Stack:**
 - **Logs**: Structlog (JSON) → Loki
 - **Metrics**: Prometheus (RED + business metrics)
-- **Traces**: Langfuse (LLM observability)
+- **Traces**: Langfuse (LLM observability) + OpenTelemetry
 - **Dashboards**: Grafana
-- **Alerts**: Prometheus Alertmanager → Slack
+- **Alerts**: Prometheus Alertmanager → Slack/PagerDuty
 
-**Key Metrics:**
-- LLM costs: $35k/year → $2-5k/year (95% reduction via caching)
-- Retrieval pass rate: 91.6% (target: >90%)
+**Key Metrics (Production SaaS Example):**
+- LLM costs: $35k/year → $2-5k/year (95% reduction via multi-tier caching)
+- Retrieval accuracy: 91.6% (target: >90%)
 - Quality gate pass rate: 85% (target: >80%)
-- Hybrid search latency: 5ms (HNSW index)
+- Vector search latency: 5ms (HNSW index)
+- API p95 latency: 245ms (target: <500ms)
 
 ## Dashboard Structure
 
@@ -217,7 +218,7 @@ histogram_quantile(0.95,
 
 ### Log Format
 
-**YG Starter uses structlog with JSON output:**
+**this project uses structlog with JSON output:**
 ```json
 {
   "event": "supervisor_routing",
@@ -309,30 +310,37 @@ histogram_quantile(0.95,
 
 **Find all errors in last hour:**
 ```logql
-{app="yg-starter-backend"} |= "ERROR" | json
+{app="api-backend"} |= "ERROR" | json
 ```
 
 **Count errors by endpoint:**
 ```logql
 sum by (endpoint) (
-  count_over_time({app="yg-starter-backend"} |= "ERROR" [5m])
+  count_over_time({app="api-backend"} |= "ERROR" [5m])
 )
 ```
 
-**Search for specific analysis:**
+**Search for specific request (correlation ID):**
 ```logql
-{app="yg-starter-backend"}
+{app="api-backend"}
 | json
-| analysis_id="550e8400-e29b-41d4-a716-446655440000"
+| correlation_id="550e8400-e29b-41d4-a716-446655440000"
 ```
 
 **p95 LLM latency from logs:**
 ```logql
 quantile_over_time(0.95,
-  {app="yg-starter-backend"}
+  {app="api-backend"}
   | json
   | event="llm_call_completed"
   | unwrap duration_seconds [5m]
+)
+```
+
+**Error rate by service:**
+```logql
+sum by (service) (
+  rate({app=~".+"} |= "ERROR" [5m])
 )
 ```
 
@@ -356,7 +364,7 @@ groups:
     annotations:
       summary: "Service {{ $labels.job }} is down"
       description: "{{ $labels.instance }} has been down for 1 minute"
-      runbook_url: "https://wiki.yg-starter.dev/runbooks/service-down"
+      runbook_url: "https://wiki.project.dev/runbooks/service-down"
 
   - alert: HighErrorRate
     expr: |
@@ -578,5 +586,5 @@ async def readiness_check():
 - Template: `../templates/structured-logging.ts`
 - Template: `../templates/prometheus-metrics.ts`
 - Template: `../templates/alerting-rules.yml`
-- [YG Starter Redis Connection](../../../../backend/app/shared/services/cache/redis_connection.py)
-- [YG Starter Quality Initiative](../../../../docs/QUALITY_INITIATIVE_FIXES.md)
+- [this project Redis Connection](../../../../backend/app/shared/services/cache/redis_connection.py)
+- [this project Quality Initiative](../../../../docs/QUALITY_INITIATIVE_FIXES.md)

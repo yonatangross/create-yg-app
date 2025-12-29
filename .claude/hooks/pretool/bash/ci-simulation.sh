@@ -32,9 +32,9 @@ cat >&2 << 'EOF'
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
 Backend:
-  poetry run ruff format --check app/
-  poetry run ruff check app/
-  poetry run ty check app/ --exclude "app/evaluation/*"
+  uv run ruff format --check app/
+  uv run ruff check app/
+  uv run ty check app/ --exclude "app/evaluation/*"
 
 Frontend:
   npm run format:check

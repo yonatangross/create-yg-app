@@ -1,8 +1,7 @@
 ---
 name: browser-content-capture
-description: Capture content from JavaScript-rendered pages, login-protected sites, and multi-page documentation using Playwright MCP tools or Claude Chrome extension. Use when WebFetch fails on SPAs, dynamic content, or auth-required pages. Integrates with YG Starter's analysis pipeline for automatic content processing.
-version: 1.0.0
-author: YG Starter AI Agent Hub
+description: Capture content from JavaScript-rendered pages, login-protected sites, and multi-page documentation using Playwright MCP tools or Claude Chrome extension. Use when WebFetch fails on SPAs, dynamic content, or auth-required pages.
+version: 1.1.0
 tags: [browser, playwright, mcp, scraping, spa, authentication, chrome-extension, 2025]
 ---
 
@@ -137,41 +136,54 @@ links = mcp__playwright__browser_evaluate(script="""
 """)
 
 # Iterate and capture each page
+all_content = []
 for link in links:
     mcp__playwright__browser_navigate(url=link['href'])
     mcp__playwright__browser_wait_for(selector=".content")
     content = mcp__playwright__browser_evaluate(
         script="document.querySelector('.content').innerText"
     )
-    # Queue to YG Starter...
+    all_content.append({
+        'url': link['href'],
+        'title': link['text'],
+        'content': content
+    })
 ```
 
 **Details:** See [references/multi-page-crawl.md](references/multi-page-crawl.md)
 
 ---
 
-## YG Starter Integration
+## Integration with RAG Systems
 
-After capturing content, queue it to YG Starter's analysis pipeline:
+After capturing content, send it to your knowledge base or RAG pipeline:
 
 ```python
 import httpx
 
-async def queue_to_yg-starter(content: str, source_url: str):
-    """Send captured content to YG Starter for analysis."""
+async def send_to_knowledge_base(content: str, source_url: str):
+    """Send captured content to vector database or RAG system."""
     async with httpx.AsyncClient() as client:
+        # Example: Send to Pinecone/Weaviate/custom endpoint
         response = await client.post(
-            "http://localhost:8500/api/v1/analyze",
+            "https://api.yourapp.com/v1/knowledge/ingest",
             json={
-                "url": source_url,
-                "content_override": content,  # Skip scraping, use captured
-                "source": "browser_capture"
-            }
+                "content": content,
+                "source_url": source_url,
+                "metadata": {
+                    "capture_method": "browser_playwright",
+                    "timestamp": "2025-12-29T10:00:00Z"
+                }
+            },
+            headers={"Authorization": f"Bearer {API_KEY}"}
         )
-        return response.json()["analysis_id"]
-```
+        return response.json()
 
-**Full integration:** See [templates/queue-to-yg-starter.py](templates/queue-to-yg-starter.py)
+# Example usage
+content = mcp__playwright__browser_evaluate(script="document.body.innerText")
+result = await send_to_knowledge_base(content, "https://docs.example.com/page")
+print(f"Ingested document ID: {result['document_id']}")
+```
 
 ---
 
@@ -223,7 +235,7 @@ User requests content from URL
 ### 4. Clean Extracted Content
 - Remove navigation, headers, footers
 - Strip ads and promotional content
-- Convert to clean markdown before sending to YG Starter
+- Convert to clean markdown before storing
 
 ---
 
@@ -239,13 +251,83 @@ User requests content from URL
 
 ---
 
-## Related Skills
+## Real-World Examples
 
-- `webapp-testing` - Playwright test automation patterns
-- `streaming-api-patterns` - Handle SSE progress updates from YG Starter
-- `ai-native-development` - RAG pipeline integration
+### Example 1: Capturing React Documentation
+
+```python
+# Navigate to React docs (client-side rendered)
+mcp__playwright__browser_navigate(url="https://react.dev/learn")
+
+# Wait for React to hydrate
+mcp__playwright__browser_wait_for(selector="[data-react-hydrated='true']")
+
+# Extract main article content
+content = mcp__playwright__browser_evaluate(script="""
+    const article = document.querySelector('article');
+    return article ? article.innerText : '';
+""")
+
+# Send to knowledge base
+await send_to_knowledge_base(content, "https://react.dev/learn")
+```
+
+### Example 2: Private Notion Documentation
+
+```python
+# User must be logged in via Chrome extension
+# Content captures their authenticated session
+
+mcp__playwright__browser_navigate(url="https://notion.so/private-team-docs")
+mcp__playwright__browser_wait_for(selector=".notion-page-content")
+
+content = mcp__playwright__browser_evaluate(script="""
+    return document.querySelector('.notion-page-content').innerText;
+""")
+```
+
+### Example 3: Multi-Page Tutorial Series
+
+```python
+# Capture entire tutorial series
+base_url = "https://docs.example.com/tutorials"
+pages = []
+
+# Get all tutorial links
+mcp__playwright__browser_navigate(url=base_url)
+links = mcp__playwright__browser_evaluate(script="""
+    return Array.from(document.querySelectorAll('.tutorial-link'))
+        .map(a => a.href);
+""")
+
+# Capture each page
+for link in links:
+    mcp__playwright__browser_navigate(url=link)
+    mcp__playwright__browser_wait_for(selector=".tutorial-content")
+    
+    content = mcp__playwright__browser_evaluate(script="""
+        return document.querySelector('.tutorial-content').innerText;
+    """)
+    
+    pages.append({'url': link, 'content': content})
+    
+    # Rate limiting
+    time.sleep(2)
+
+# Batch ingest
+for page in pages:
+    await send_to_knowledge_base(page['content'], page['url'])
+```
 
 ---
 
-**Version:** 1.0.0 (December 2025)
+## Related Skills
+
+- `webapp-testing` - Playwright test automation patterns
+- `api-integration-patterns` - REST API data fetching
+- `vector-search-optimization` - Storing captured content in vector DBs
+
+---
+
+**Version:** 1.1.0 (December 2025)
 **MCP Requirement:** Playwright MCP server or Claude Chrome extension

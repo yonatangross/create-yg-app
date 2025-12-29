@@ -76,7 +76,7 @@ langfuse.trace(
         "difficulty": "complex",
         "language": "en"
     },
-    tags=["production", "yg-starter", "security"]
+    tags=["production", "project", "security"]
 )
 ```
 
@@ -161,7 +161,7 @@ langfuse.trace(
 6. **Track business metrics** in metadata (conversion, revenue, user_tier)
 7. **Filter by tags** in dashboards for environment-specific views
 
-## YG Starter Session Pattern
+## this project Session Pattern
 
 ```python
 # backend/app/workflows/content_analysis.py
@@ -181,7 +181,7 @@ async def run_content_analysis(analysis_id: str, content: str, user_id: str):
             "agent_count": 8,
             "environment": "production"
         },
-        tags=["yg-starter", "production", "content-analysis"]
+        tags=["project", "production", "content-analysis"]
     )
 
     # All nested @observe calls inherit session_id

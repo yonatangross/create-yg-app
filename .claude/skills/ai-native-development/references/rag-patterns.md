@@ -27,7 +27,7 @@ async function ragQuery(question: string): Promise<string> {
 
   // 3. Generate answer with context
   const response = await openai.chat.completions.create({
-    model: 'gpt-4-turbo-preview',
+    model: 'gpt-4o',  // GPT-4o (Dec 2024+)
     messages: [
       {
         role: 'system',

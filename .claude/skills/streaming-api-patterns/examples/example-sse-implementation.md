@@ -1,10 +1,10 @@
-# YG Starter SSE Implementation
+# this project SSE Implementation
 
-Real-world Server-Sent Events implementation from YG Starter, documenting the EventBroadcaster service, SSE endpoint handler, event buffering, and workflow integration.
+Real-world Server-Sent Events implementation from this project, documenting the EventBroadcaster service, SSE endpoint handler, event buffering, and workflow integration.
 
 ## Project Context
 
-**YG Starter**: Multi-agent analysis workflow with real-time progress streaming
+**this project**: Multi-agent analysis workflow with real-time progress streaming
 
 **Tech Stack**:
 - Backend: FastAPI + sse-starlette 3.0.3
@@ -722,7 +722,7 @@ async def test_event_buffering():
 ### 1. Always Buffer Events
 
 **Lesson**: Even with "fast" workflows, race conditions happen
-**Solution**: Always buffer recent events (YG Starter: 100 events, 5-minute TTL)
+**Solution**: Always buffer recent events (this project: 100 events, 5-minute TTL)
 
 ### 2. Use aclosing() for Generators
 

@@ -9,7 +9,7 @@
 **Before collecting evidence, verify:**
 
 - [ ] All code files saved (no unsaved changes)
-- [ ] Dependencies installed (`poetry install` / `npm install`)
+- [ ] Dependencies installed (`uv sync` / `npm install`)
 - [ ] Database migrations applied (`alembic upgrade head`)
 - [ ] Environment variables set (`.env` file present)
 - [ ] Development servers running (if needed for tests)
@@ -35,7 +35,7 @@
   ```bash
   # Backend
   cd backend
-  poetry run pytest tests/unit/ --tb=short -v 2>&1 | tee /tmp/test_results.log
+  uv run pytest tests/unit/ --tb=short -v 2>&1 | tee /tmp/test_results.log
 
   # Frontend
   cd frontend
@@ -81,7 +81,7 @@
 - [ ] **Formatter checked**
   ```bash
   # Backend
-  poetry run ruff format --check app/
+  uv run ruff format --check app/
 
   # Frontend
   npm run format:check
@@ -90,7 +90,7 @@
 - [ ] **Linter executed**
   ```bash
   # Backend
-  poetry run ruff check app/
+  uv run ruff check app/
 
   # Frontend
   npm run lint
@@ -99,7 +99,7 @@
 - [ ] **Type checker executed**
   ```bash
   # Backend
-  poetry run ty check app/
+  uv run ty check app/
 
   # Frontend
   npm run typecheck
@@ -121,7 +121,7 @@
 - [ ] **Integration tests executed**
   ```bash
   cd backend
-  poetry run pytest tests/integration/ --tb=short -v
+  uv run pytest tests/integration/ --tb=short -v
   ```
 
 - [ ] **API endpoints tested** (if applicable)
@@ -133,7 +133,7 @@
 
 - [ ] **Database integrity verified** (if applicable)
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c "SELECT COUNT(*) FROM analyses;"
+  psql -h localhost -p 5437 -U project -c "SELECT COUNT(*) FROM analyses;"
   ```
 
 - [ ] **Event streaming verified** (if applicable)
@@ -162,7 +162,7 @@
 - [ ] **Security scan executed**
   ```bash
   # Backend
-  poetry run pip-audit
+  uv run pip-audit
 
   # Frontend
   npm audit --audit-level=moderate
@@ -249,7 +249,7 @@
 
 ---
 
-## YG Starter-Specific Checklist
+## this project-Specific Checklist
 
 ### Backend Tasks
 
@@ -282,7 +282,7 @@
 
 - [ ] **Golden dataset integrity verified** (if data changes):
   ```bash
-  poetry run python scripts/backup_golden_dataset.py verify
+  uv run python scripts/backup_golden_dataset.py verify
   ```
 
 ### Frontend Tasks
@@ -429,10 +429,10 @@ echo "Exit code: $?"
 ```bash
 # Backend
 cd backend
-poetry run pytest tests/unit/ --tb=short -v
-poetry run ruff format --check app/
-poetry run ruff check app/
-poetry run ty check app/
+uv run pytest tests/unit/ --tb=short -v
+uv run ruff format --check app/
+uv run ruff check app/
+uv run ty check app/
 
 # Frontend
 cd frontend

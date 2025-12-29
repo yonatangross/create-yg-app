@@ -252,7 +252,7 @@ async def traced_chat(messages: list[dict], **kwargs):
 
 **Use MCP:**
 ```
-mcp__yg-starter-langfuse__get_traces(project_name="chat")
+mcp__langfuse__get_traces(project_name="chat")
 ```
 
 ---
@@ -309,7 +309,7 @@ class ChatInput(BaseModel):
 | Tool | Purpose |
 |------|---------|
 | `context7` | Anthropic/OpenAI SDK docs |
-| `yg-starter-langfuse` | View traces, monitor costs |
+| `langfuse` | View traces, monitor costs |
 | `mcp-find` | Discover additional AI testing tools |
 
 ---

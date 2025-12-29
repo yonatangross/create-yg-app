@@ -151,9 +151,9 @@ dist/bundle.css     18.32 kB │ gzip: 4.21 kB
 ```bash
 # Python lint check (backend)
 cd backend
-poetry run ruff format --check app/  # Format check
-poetry run ruff check app/            # Lint check
-poetry run ty check app/              # Type check
+uv run ruff format --check app/  # Format check
+uv run ruff check app/            # Lint check
+uv run ty check app/              # Type check
 
 # TypeScript lint check (frontend)
 cd frontend
@@ -241,8 +241,8 @@ pytest tests/smoke/ --tb=short
 **Exit Code:** 0
 **Output:**
 ```
-deployment.apps/yg-starter-backend configured
-service/yg-starter-backend unchanged
+deployment.apps/project-backend configured
+service/project-backend unchanged
 ```
 
 ### Post-Deployment Verification
@@ -284,7 +284,7 @@ curl -X POST http://localhost:8500/api/v1/analyze \
   -d '{"url": "https://example.com"}'
 
 # Database integrity
-psql -h localhost -p 5437 -U yg-starter -c "SELECT COUNT(*) FROM analyses;"
+psql -h localhost -p 5437 -U project -c "SELECT COUNT(*) FROM analyses;"
 ```
 
 **Evidence Template:**
@@ -549,7 +549,7 @@ echo "[$DATE] Tests: $?, Lint: $?" >> .claude/evidence/daily-log.txt
 
 ---
 
-## YG Starter Examples
+## this project Examples
 
 ### Example 1: Backend API Endpoint
 
@@ -561,22 +561,22 @@ echo "[$DATE] Tests: $?, Lint: $?" >> .claude/evidence/daily-log.txt
 **Tests:**
 ```bash
 cd backend
-poetry run pytest tests/unit/api/v1/test_artifacts.py::test_get_artifact_by_id -v
+uv run pytest tests/unit/api/v1/test_artifacts.py::test_get_artifact_by_id -v
 # Exit code: 0
 # PASSED
 ```
 
 **Type Check:**
 ```bash
-poetry run ty check app/api/v1/artifacts.py
+uv run ty check app/api/v1/artifacts.py
 # Exit code: 0
 # Success: no issues found
 ```
 
 **Lint:**
 ```bash
-poetry run ruff format --check app/api/v1/artifacts.py
-poetry run ruff check app/api/v1/artifacts.py
+uv run ruff format --check app/api/v1/artifacts.py
+uv run ruff check app/api/v1/artifacts.py
 # Exit code: 0 (both)
 # All checks passed
 ```
@@ -646,7 +646,7 @@ Screenshot: `/tmp/analysis-progress-card-error-state.png`
 **Migration:**
 ```bash
 cd backend
-poetry run alembic upgrade head
+uv run alembic upgrade head
 # Exit code: 0
 # INFO  [alembic.runtime.migration] Running upgrade abc123 -> def456
 ```
@@ -660,7 +660,7 @@ WHERE tablename = 'analysis_chunks' AND indexname LIKE '%tsvector%';
 
 **Performance Test:**
 ```bash
-poetry run pytest tests/unit/repositories/test_chunk_repository.py::test_hybrid_search_performance -v
+uv run pytest tests/unit/repositories/test_chunk_repository.py::test_hybrid_search_performance -v
 # Exit code: 0
 # PASSED
 # Mean query time: 45ms (before: 220ms)
@@ -669,7 +669,7 @@ poetry run pytest tests/unit/repositories/test_chunk_repository.py::test_hybrid_
 
 **Integrity Test:**
 ```bash
-poetry run pytest tests/integration/test_retrieval_quality.py -v
+uv run pytest tests/integration/test_retrieval_quality.py -v
 # Exit code: 0
 # 186/203 passed (91.6%)
 ```
@@ -790,15 +790,15 @@ Store evidence in `.claude/context/shared-context.json`:
 
 ## Quick Reference
 
-### Evidence Collection Commands (YG Starter)
+### Evidence Collection Commands (this project)
 
 **Backend (Python):**
 ```bash
 cd backend
-poetry run pytest tests/unit/ --tb=short -v 2>&1 | tee /tmp/test_results.log
-poetry run ruff format --check app/
-poetry run ruff check app/
-poetry run ty check app/ --exclude "app/evaluation/*"
+uv run pytest tests/unit/ --tb=short -v 2>&1 | tee /tmp/test_results.log
+uv run ruff format --check app/
+uv run ruff check app/
+uv run ty check app/ --exclude "app/evaluation/*"
 ```
 
 **Frontend (TypeScript):**
@@ -813,7 +813,7 @@ npm run build
 **Integration:**
 ```bash
 cd backend
-poetry run pytest tests/integration/ --tb=short -v
+uv run pytest tests/integration/ --tb=short -v
 curl -f http://localhost:8500/health
 ```
 

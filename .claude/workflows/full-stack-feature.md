@@ -163,7 +163,7 @@ async def get_feature(
 **Use MCP:**
 ```
 mcp__context7__get-library-docs(/tiangolo/fastapi, topic="dependencies")
-mcp__yg-starter-postgres-dev__query("SELECT * FROM features LIMIT 1")
+mcp__postgres-mcp__query("SELECT * FROM features LIMIT 1")
 ```
 
 ---
@@ -344,7 +344,7 @@ describe('FeatureList', () => {
 | Tool | Purpose |
 |------|---------|
 | `context7` | FastAPI, React Query, Zod documentation |
-| `yg-starter-postgres-dev` | Test database queries |
+| `postgres-mcp` | Test database queries |
 | `playwright` | E2E testing if needed |
 
 ---

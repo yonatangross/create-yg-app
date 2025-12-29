@@ -1,7 +1,7 @@
 ---
 name: golden-dataset-validation
 description: Validation rules, schema checks, duplicate detection, and coverage analysis for golden dataset integrity
-version: 1.0.0
+version: 2.0.0
 author: YG Starter AI Agent Hub
 tags: [golden-dataset, validation, integrity, schema, duplicate-detection, 2025]
 ---
@@ -132,7 +132,7 @@ This skill provides comprehensive validation patterns for the golden dataset, en
 
 ```python
 FORBIDDEN_URL_PATTERNS = [
-    "yg-starter.dev",
+    "project.dev",
     "placeholder",
     "example.com",
     "localhost",
@@ -581,18 +581,18 @@ async def validate_full_dataset() -> dict:
 
 ```bash
 # Validate specific document
-poetry run python scripts/data/add_to_golden_dataset.py validate \
+uv run python scripts/data/add_to_golden_dataset.py validate \
     --document-id "new-doc-id"
 
 # Validate full dataset
-poetry run python scripts/data/add_to_golden_dataset.py validate-all
+uv run python scripts/data/add_to_golden_dataset.py validate-all
 
 # Check for duplicates
-poetry run python scripts/data/add_to_golden_dataset.py check-duplicate \
+uv run python scripts/data/add_to_golden_dataset.py check-duplicate \
     --url "https://example.com/article"
 
 # Analyze coverage gaps
-poetry run python scripts/data/add_to_golden_dataset.py coverage
+uv run python scripts/data/add_to_golden_dataset.py coverage
 ```
 
 ---
@@ -610,7 +610,7 @@ if echo "$CHANGED_FILES" | grep -q "fixtures/documents_expanded.json\|fixtures/q
     echo "🔍 Validating golden dataset changes..."
 
     cd backend
-    poetry run python scripts/data/add_to_golden_dataset.py validate-all
+    uv run python scripts/data/add_to_golden_dataset.py validate-all
 
     if [ $? -ne 0 ]; then
         echo "❌ Golden dataset validation failed!"
@@ -632,5 +632,166 @@ fi
 
 ---
 
-**Version:** 1.0.0 (December 2025)
-**Issue:** #599
+## 2025 Best Practices: Advanced Validation
+
+### Automated Schema Evolution Checking
+
+```python
+from typing import Any
+import jsonschema
+
+class SchemaEvolutionValidator:
+    """Detect breaking changes in schema versions."""
+
+    def __init__(self, schema_v1: dict, schema_v2: dict):
+        self.schema_v1 = schema_v1
+        self.schema_v2 = schema_v2
+
+    def check_backward_compatibility(self) -> list[str]:
+        """Check if v2 schema is backward compatible with v1."""
+        issues = []
+
+        # Check required fields
+        v1_required = set(self.schema_v1.get("required", []))
+        v2_required = set(self.schema_v2.get("required", []))
+
+        new_required = v2_required - v1_required
+        if new_required:
+            issues.append(f"Breaking: New required fields added: {new_required}")
+
+        # Check removed properties
+        v1_props = set(self.schema_v1.get("properties", {}).keys())
+        v2_props = set(self.schema_v2.get("properties", {}).keys())
+
+        removed = v1_props - v2_props
+        if removed:
+            issues.append(f"Breaking: Properties removed: {removed}")
+
+        # Check type changes
+        for prop in v1_props & v2_props:
+            v1_type = self.schema_v1["properties"][prop].get("type")
+            v2_type = self.schema_v2["properties"][prop].get("type")
+            if v1_type != v2_type:
+                issues.append(f"Breaking: Type changed for '{prop}': {v1_type} -> {v2_type}")
+
+        return issues
+```
+
+### Embedding Drift Detection
+
+```python
+import numpy as np
+from scipy.stats import ks_2samp
+
+class EmbeddingDriftDetector:
+    """Detect distribution drift in embeddings."""
+
+    def detect_drift(
+        self,
+        baseline_embeddings: np.ndarray,
+        current_embeddings: np.ndarray,
+        threshold: float = 0.05,
+    ) -> dict:
+        """Detect if embedding distribution has drifted.
+
+        Uses Kolmogorov-Smirnov test on embedding dimensions.
+        """
+        n_dims = baseline_embeddings.shape[1]
+        p_values = []
+
+        for dim in range(n_dims):
+            baseline_dim = baseline_embeddings[:, dim]
+            current_dim = current_embeddings[:, dim]
+
+            # KS test
+            statistic, p_value = ks_2samp(baseline_dim, current_dim)
+            p_values.append(p_value)
+
+        # Count significant drifts
+        drifted_dims = sum(1 for p in p_values if p < threshold)
+        drift_percentage = drifted_dims / n_dims
+
+        return {
+            "has_drift": drift_percentage > 0.1,  # >10% dims drifted
+            "drifted_dimensions": drifted_dims,
+            "total_dimensions": n_dims,
+            "drift_percentage": drift_percentage,
+            "min_p_value": min(p_values),
+            "warning": "Embedding model may have changed" if drift_percentage > 0.1 else None,
+        }
+```
+
+### Automated Coverage Reports
+
+```python
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class CoverageReport:
+    """Comprehensive coverage analysis."""
+
+    # Content type coverage
+    content_type_balance: dict[str, float]  # % distribution
+    underrepresented_types: list[str]
+
+    # Domain coverage
+    domain_balance: dict[str, int]  # count per domain
+    missing_domains: list[str]
+
+    # Difficulty coverage
+    difficulty_balance: dict[str, int]
+    difficulty_gaps: list[str]
+
+    # Query coverage
+    total_queries: int
+    avg_queries_per_doc: float
+    docs_without_queries: list[str]
+
+    # Recommendations
+    recommendations: list[str]
+
+    def generate_html_report(self) -> str:
+        """Generate HTML coverage report."""
+        return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Golden Dataset Coverage Report</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; margin: 40px; }}
+        .metric {{ margin: 20px 0; }}
+        .warning {{ color: #d32f2f; }}
+        .good {{ color: #388e3c; }}
+        table {{ border-collapse: collapse; width: 100%; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+        th {{ background-color: #f5f5f5; }}
+    </style>
+</head>
+<body>
+    <h1>Golden Dataset Coverage Report</h1>
+
+    <div class="metric">
+        <h2>Content Type Distribution</h2>
+        <table>
+            <tr><th>Type</th><th>Percentage</th></tr>
+            {''.join(f'<tr><td>{t}</td><td>{p:.1%}</td></tr>' for t, p in self.content_type_balance.items())}
+        </table>
+        {f'<p class="warning">Underrepresented: {", ".join(self.underrepresented_types)}</p>' if self.underrepresented_types else ''}
+    </div>
+
+    <div class="metric">
+        <h2>Recommendations</h2>
+        <ul>
+            {''.join(f'<li>{r}</li>' for r in self.recommendations)}
+        </ul>
+    </div>
+</body>
+</html>
+        """
+```
+
+---
+
+**Version:** 2.0.0 (January 2025)
+**Updated:** Modern validation patterns for AI/ML datasets

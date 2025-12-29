@@ -1,7 +1,7 @@
 {
   "$schema": "../../schemas/skill-capabilities.schema.json",
   "name": "type-safety-validation",
-  "version": "1.1.0",
+  "version": "1.3.0",
   "description": "End-to-end type safety with Zod, tRPC, Prisma, exhaustive type checking, branded types, and TypeScript 5.7+ features (2025 patterns)",
 
   "capabilities": {
@@ -81,16 +81,16 @@
       "reference_file": "references/typescript-5-features.md",
       "token_cost": 380
     },
-    "yg-starter-integration": {
-      "keywords": ["yg-starter", "pydantic", "fastapi", "openapi", "backend types", "frontend types"],
+    "fullstack-integration": {
+      "keywords": ["fullstack", "pydantic", "fastapi", "openapi", "backend types", "frontend types"],
       "solves": [
-        "How can YG Starter use Zod with FastAPI?",
+        "How do I use Zod with FastAPI?",
         "Convert Pydantic to Zod schemas",
         "Share types between Python and TypeScript",
         "Validate API responses in frontend",
         "Generate types from OpenAPI spec"
       ],
-      "reference_file": "examples/yg-starter-type-safety.md",
+      "reference_file": "examples/fullstack-type-safety.md",
       "token_cost": 420
     },
     "implementation-checklist": {
@@ -143,7 +143,7 @@
     "tier_5_examples": {
       "files": "examples/*.md",
       "tokens": 420,
-      "note": "YG Starter-specific integration examples"
+      "note": "Real-world dashboard integration examples"
     },
     "tier_6_checklists": {
       "files": "checklists/*.md",

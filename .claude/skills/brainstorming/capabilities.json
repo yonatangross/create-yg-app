@@ -70,10 +70,10 @@
       "token_cost": 130
     },
     "real-world-examples": {
-      "keywords": ["example", "yg-starter", "caching", "dashboard", "authentication"],
+      "keywords": ["example", "project", "caching", "dashboard", "authentication"],
       "solves": [
         "Show me real examples of brainstorming sessions",
-        "How was YG Starter designed?",
+        "How to design feature X with trade-off analysis?",
         "Caching strategy examples",
         "Real-time dashboard design decisions"
       ],

@@ -119,7 +119,7 @@ Use this template to conduct security reviews of APIs, workflows, or entire appl
 **Scan Results**:
 ```bash
 # Run pip-audit
-poetry run pip-audit
+uv run pip-audit
 
 # Results:
 Critical: [count]

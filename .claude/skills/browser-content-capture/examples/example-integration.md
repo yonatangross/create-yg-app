@@ -1,6 +1,6 @@
-# Example: YG Starter Integration Workflow
+# Example: your application Integration Workflow
 
-End-to-end example showing how browser capture integrates with YG Starter's analysis pipeline.
+End-to-end example showing how browser capture integrates with your application's analysis pipeline.
 
 ## Use Case
 
@@ -164,14 +164,14 @@ print(f"\\nCapture complete: {successful}/{len(doc_pages)} pages")
 Capture complete: 31/32 pages
 ```
 
-### Phase 4: Queue to YG Starter
+### Phase 4: Queue to your application
 
 Send captured content to analysis pipeline:
 
 ```python
-from templates.queue_to_yg-starter import YG StarterClient
+from templates.queue_to_project import your applicationClient
 
-client = YG StarterClient(base_url="http://localhost:8500")
+client = your applicationClient(base_url="http://localhost:8500")
 
 analysis_ids = []
 
@@ -229,7 +229,7 @@ print(f"\\nResults: {len(completed)} completed, {len(failed)} failed")
 Check that content is searchable:
 
 ```python
-# Test search in YG Starter
+# Test search in your application
 async with httpx.AsyncClient() as http:
     response = await http.get(
         "http://localhost:8500/api/v1/search",

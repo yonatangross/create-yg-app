@@ -1,7 +1,7 @@
 ---
 name: golden-dataset-management
 description: Backup, restore, and validate golden datasets for AI/ML systems - ensuring test data integrity and preventing catastrophic data loss
-version: 1.0.0
+version: 2.0.0
 author: YG Starter AI Agent Hub
 tags: [golden-dataset, backup, data-protection, testing, regression, 2025]
 ---
@@ -26,19 +26,20 @@ A **golden dataset** is a curated collection of high-quality examples used for:
 
 ---
 
-## YG Starter's Golden Dataset
+## Example Production Dataset
 
-**Stats (Production):**
-- **98 analyses** (completed content analyses)
-- **415 chunks** (embedded text segments)
-- **203 test queries** (with expected results)
-- **91.6% pass rate** (retrieval quality metric)
+**Typical Stats:**
+- **100-500 documents** (curated technical content)
+- **400-2000 chunks** (embedded text segments)
+- **200-1000 test queries** (with expected results)
+- **85-95% pass rate** (retrieval quality metric)
 
 **Purpose:**
 - Test hybrid search (vector + BM25 + RRF)
 - Validate metadata boosting strategies
 - Detect regressions in retrieval quality
 - Benchmark new embedding models
+- A/B test different chunking strategies
 
 ---
 
@@ -52,7 +53,7 @@ Golden dataset analyses MUST store **real canonical URLs**, not placeholders.
 
 ```python
 # WRONG - Placeholder URL (breaks restore)
-analysis.url = "https://yg-starter.dev/placeholder/123"
+analysis.url = "https://project.dev/placeholder/123"
 
 # CORRECT - Real canonical URL (enables re-fetch if needed)
 analysis.url = "https://docs.python.org/3/library/asyncio.html"
@@ -70,7 +71,7 @@ def verify_url_contract(analyses: list[Analysis]) -> list[str]:
     """Find analyses with placeholder URLs."""
     invalid = []
     for analysis in analyses:
-        if "yg-starter.dev" in analysis.url or "placeholder" in analysis.url:
+        if "project.dev" in analysis.url or "placeholder" in analysis.url:
             invalid.append(analysis.id)
     return invalid
 ```
@@ -91,7 +92,7 @@ def verify_url_contract(analyses: list[Analysis]) -> list[str]:
 - Must regenerate embeddings on restore
 - Larger file size than SQL dump
 
-**YG Starter uses JSON backup.**
+**Recommended: Use JSON backup for version control.**
 
 #### Strategy 2: SQL Dump
 
@@ -347,7 +348,7 @@ async def verify_golden_dataset() -> dict:
 
         # 2. Check URL contract
         query = select(Analysis).where(
-            Analysis.url.like("%yg-starter.dev%") |
+            Analysis.url.like("%project.dev%") |
             Analysis.url.like("%placeholder%")
         )
         result = await session.execute(query)
@@ -394,16 +395,16 @@ async def verify_golden_dataset() -> dict:
 cd backend
 
 # Backup golden dataset
-poetry run python scripts/backup_golden_dataset.py backup
+uv run python scripts/backup_golden_dataset.py backup
 
 # Verify backup integrity
-poetry run python scripts/backup_golden_dataset.py verify
+uv run python scripts/backup_golden_dataset.py verify
 
 # Restore from backup (WARNING: Deletes existing data)
-poetry run python scripts/backup_golden_dataset.py restore --replace
+uv run python scripts/backup_golden_dataset.py restore --replace
 
 # Restore without deleting (adds to existing)
-poetry run python scripts/backup_golden_dataset.py restore
+uv run python scripts/backup_golden_dataset.py restore
 ```
 
 ---
@@ -434,14 +435,14 @@ jobs:
       - name: Install dependencies
         run: |
           cd backend
-          poetry install
+          uv sync
 
       - name: Run backup
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
         run: |
           cd backend
-          poetry run python scripts/backup_golden_dataset.py backup
+          uv run python scripts/backup_golden_dataset.py backup
 
       - name: Commit backup
         run: |
@@ -469,7 +470,7 @@ git commit -m "chore: golden dataset backup (98 analyses, 415 chunks)"
 
 ```bash
 # Pre-deployment check
-poetry run python scripts/backup_golden_dataset.py verify
+uv run python scripts/backup_golden_dataset.py verify
 
 # Should output:
 # ✅ Validation passed
@@ -486,10 +487,10 @@ poetry run python scripts/backup_golden_dataset.py verify
 
 # Staging environment
 export DATABASE_URL=$STAGING_DATABASE_URL
-poetry run python scripts/backup_golden_dataset.py restore --replace
+uv run python scripts/backup_golden_dataset.py restore --replace
 
 # Run tests to verify
-poetry run pytest tests/integration/test_retrieval_quality.py
+uv run pytest tests/integration/test_retrieval_quality.py
 ```
 
 ### 4. Document Changes
@@ -527,13 +528,13 @@ poetry run pytest tests/integration/test_retrieval_quality.py
 # Oh no! Someone ran DELETE FROM analyses WHERE 1=1
 
 # 1. Restore from backup
-poetry run python scripts/backup_golden_dataset.py restore --replace
+uv run python scripts/backup_golden_dataset.py restore --replace
 
 # 2. Verify
-poetry run python scripts/backup_golden_dataset.py verify
+uv run python scripts/backup_golden_dataset.py verify
 
 # 3. Run tests
-poetry run pytest tests/integration/test_retrieval_quality.py
+uv run pytest tests/integration/test_retrieval_quality.py
 ```
 
 ### Scenario 2: Database Migration Gone Wrong
@@ -545,7 +546,7 @@ poetry run pytest tests/integration/test_retrieval_quality.py
 alembic downgrade -1
 
 # 2. Restore from backup
-poetry run python scripts/backup_golden_dataset.py restore --replace
+uv run python scripts/backup_golden_dataset.py restore --replace
 
 # 3. Re-run migration (fixed)
 alembic upgrade head
@@ -557,25 +558,25 @@ alembic upgrade head
 # Fresh dev environment, need golden dataset
 
 # 1. Clone repo (includes backup)
-git clone https://github.com/your-org/yg-starter
-cd yg-starter/backend
+git clone https://github.com/your-org/project
+cd project/backend
 
 # 2. Setup DB
 docker compose up -d postgres
 alembic upgrade head
 
 # 3. Restore golden dataset
-poetry run python scripts/backup_golden_dataset.py restore
+uv run python scripts/backup_golden_dataset.py restore
 
 # 4. Verify
-poetry run pytest tests/integration/test_retrieval_quality.py
+uv run pytest tests/integration/test_retrieval_quality.py
 ```
 
 ---
 
 ## References
 
-### YG Starter Implementation
+### Example Implementation Files
 - `backend/scripts/backup_golden_dataset.py` - Main backup script
 - `backend/data/golden_dataset_backup.json` - JSON backup (version controlled)
 - `backend/data/golden_dataset_metadata.json` - Quick stats
@@ -587,5 +588,92 @@ poetry run pytest tests/integration/test_retrieval_quality.py
 
 ---
 
-**Version:** 1.0.0 (December 2025)
-**Status:** Production-ready patterns from YG Starter's 98-analysis golden dataset
+## 2025 Best Practices Update
+
+### Incremental Backups
+
+```python
+from pathlib import Path
+import json
+from datetime import datetime, UTC
+
+class IncrementalBackup:
+    """Incremental backup with change tracking."""
+
+    def __init__(self, backup_dir: Path):
+        self.backup_dir = backup_dir
+        self.backup_dir.mkdir(exist_ok=True)
+
+    async def create_incremental_backup(self) -> Path:
+        """Create incremental backup (only changed documents)."""
+
+        # Load previous backup hash map
+        hash_file = self.backup_dir / "document_hashes.json"
+        previous_hashes = {}
+        if hash_file.exists():
+            with open(hash_file) as f:
+                previous_hashes = json.load(f)
+
+        # Fetch current documents
+        async with get_session() as session:
+            query = select(Analysis).where(Analysis.status == "completed")
+            result = await session.execute(query)
+            analyses = result.scalars().all()
+
+        # Find changed documents
+        changed = []
+        current_hashes = {}
+
+        for analysis in analyses:
+            # Calculate content hash
+            content = json.dumps(serialize_analysis(analysis), sort_keys=True)
+            current_hash = hashlib.sha256(content.encode()).hexdigest()
+            current_hashes[str(analysis.id)] = current_hash
+
+            # Check if changed
+            if previous_hashes.get(str(analysis.id)) != current_hash:
+                changed.append(analysis)
+
+        # Create incremental backup
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+        backup_file = self.backup_dir / f"incremental_{timestamp}.json"
+
+        with open(backup_file, "w") as f:
+            json.dump({
+                "version": "2.0",
+                "type": "incremental",
+                "created_at": datetime.now(UTC).isoformat(),
+                "total_documents": len(analyses),
+                "changed_documents": len(changed),
+                "analyses": [serialize_analysis(a) for a in changed],
+            }, f, indent=2)
+
+        # Update hash map
+        with open(hash_file, "w") as f:
+            json.dump(current_hashes, f, indent=2)
+
+        print(f"✅ Incremental backup: {len(changed)}/{len(analyses)} documents changed")
+        return backup_file
+```
+
+### Compression for Large Datasets
+
+```python
+import gzip
+import json
+
+def save_compressed_backup(data: dict, path: Path):
+    """Save compressed JSON backup."""
+    with gzip.open(f"{path}.gz", "wt", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, default=str)
+
+def load_compressed_backup(path: Path) -> dict:
+    """Load compressed JSON backup."""
+    with gzip.open(f"{path}.gz", "rt", encoding="utf-8") as f:
+        return json.load(f)
+```
+
+---
+
+**Version:** 2.0.0 (January 2025)
+**Status:** Production-ready patterns for AI/ML dataset management

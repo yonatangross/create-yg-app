@@ -1,7 +1,7 @@
 {
   "$schema": "../../schemas/skill-capabilities.schema.json",
   "name": "design-system-starter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Comprehensive design system patterns, design token structures, component architecture, accessibility guidelines, and theming strategies",
 
   "capabilities": {

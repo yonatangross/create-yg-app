@@ -120,7 +120,7 @@ def agent2(state):
 
 ---
 
-## YG Starter's Analysis State
+## this project's Analysis State
 
 ```python
 from typing import TypedDict, Annotated
@@ -338,4 +338,4 @@ checkpointer = PostgresSaver.from_conn_string(
 
 - [LangGraph State Documentation](https://langchain-ai.github.io/langgraph/concepts/low_level/#state)
 - [Annotated Accumulators](https://langchain-ai.github.io/langgraph/how-tos/state-reducers/)
-- YG Starter: `backend/app/workflows/state.py`
+- this project: `backend/app/workflows/state.py`

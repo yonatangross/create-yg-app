@@ -1,6 +1,6 @@
-# Monitoring Implementation Checklist
+# Monitoring Implementation Checklist (2025)
 
-Complete guide for implementing production-grade monitoring, based on YG Starter's real setup.
+Complete guide for implementing production-grade monitoring with modern tools and patterns.
 
 ## Prerequisites
 
@@ -759,7 +759,7 @@ curl http://localhost:9090/api/v1/alerts
 - Template: `../templates/structured-logging.ts`
 - Template: `../templates/prometheus-metrics.ts`
 - Template: `../templates/alerting-rules.yml`
-- Example: `../examples/yg-starter-monitoring-dashboard.md`
+- Example: `../examples/project-monitoring-dashboard.md`
 - [Prometheus Best Practices](https://prometheus.io/docs/practices/)
 - [Grafana Documentation](https://grafana.com/docs/)
 - [Loki Documentation](https://grafana.com/docs/loki/)

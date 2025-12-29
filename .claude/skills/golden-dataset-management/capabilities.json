@@ -1,7 +1,7 @@
 {
   "$schema": "../../schemas/skill-capabilities.schema.json",
   "name": "golden-dataset-management",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Backup, restore, and validate golden datasets for AI/ML systems - ensuring test data integrity and preventing catastrophic data loss",
 
   "capabilities": {
@@ -60,15 +60,15 @@
       "reference_file": "SKILL.md#disaster-recovery",
       "token_cost": 130
     },
-    "yg-starter-golden-dataset": {
-      "keywords": ["yg-starter", "98 analyses", "415 chunks", "retrieval evaluation", "real world"],
+    "production-examples": {
+      "keywords": ["production", "real world", "retrieval evaluation", "benchmarks"],
       "solves": [
-        "What is YG Starter's golden dataset?",
-        "How does YG Starter protect test data?",
+        "What are typical golden dataset sizes?",
+        "How to protect test data in production?",
         "Real-world backup/restore examples",
         "Production golden dataset stats"
       ],
-      "reference_file": "SKILL.md#yg-starters-golden-dataset",
+      "reference_file": "SKILL.md#example-production-dataset",
       "token_cost": 80
     }
   },

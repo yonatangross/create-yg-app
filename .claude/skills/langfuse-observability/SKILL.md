@@ -1,8 +1,8 @@
 ---
 name: langfuse-observability
-description: LLM observability with self-hosted Langfuse - tracing, evaluation, monitoring, prompt management, and cost tracking
-version: 1.0.0
-author: YG Starter AI Agent Hub
+description: LLM observability with self-hosted Langfuse 3.x - tracing, evaluation, monitoring, prompt management, and cost tracking
+version: 2.0.0
+author: YG Starter Template
 tags: [langfuse, llm, observability, tracing, evaluation, prompts, 2025]
 ---
 
@@ -10,20 +10,22 @@ tags: [langfuse, llm, observability, tracing, evaluation, prompts, 2025]
 
 ## Overview
 
-**Langfuse** is the open-source LLM observability platform that YG Starter uses for tracing, monitoring, evaluation, and prompt management. Unlike LangSmith (deprecated), Langfuse is self-hosted, free, and designed for production LLM applications.
+**Langfuse 3.x** is the open-source LLM observability platform for tracing, monitoring, evaluation, and prompt management. Unlike LangSmith (proprietary), Langfuse is self-hosted, free, and designed for production LLM applications.
 
 **When to use this skill:**
 - Setting up LLM observability from scratch
 - Debugging slow or incorrect LLM responses
-- Tracking token usage and costs
-- Managing prompts in production
-- Evaluating LLM output quality
+- Tracking token usage and costs per agent/user/session
+- Managing prompts in production with versioning
+- Evaluating LLM output quality with automated scoring
 - Migrating from LangSmith to Langfuse
 
-**YG Starter Integration:**
-- **Status**: ✅ Migrated from LangSmith (Dec 2025)
-- **Location**: `backend/app/shared/services/langfuse/`
-- **MCP Server**: `yg-starter-langfuse` (optional)
+**Real-World Use Cases:**
+- **Multi-Agent Cost Attribution**: Track costs by agent type (security, coding, general)
+- **Prompt A/B Testing**: Compare prompt versions with quality scores
+- **Quality Monitoring**: Automated scoring for relevance, coherence, factuality
+- **Dataset Evaluation**: Regression testing with golden datasets
+- **Session Analytics**: Group traces by user session for journey analysis
 
 ---
 
@@ -157,7 +159,7 @@ response = await llm.generate(
 ```python
 from langfuse import get_client
 
-# Method 1: update_current_generation (preferred in YG Starter)
+# Method 1: update_current_generation (preferred in this project)
 langfuse = get_client()
 prompt = langfuse.get_prompt("security_auditor", label="production")
 
@@ -174,7 +176,7 @@ with langfuse.start_as_current_generation(
     generation.update(output=response)
 ```
 
-**YG Starter Pattern (with caching):**
+**this project Pattern (with caching):**
 ```python
 # PromptManager returns both content AND TextPromptClient
 prompt_content, prompt_client = await prompt_manager.get_prompt_with_langfuse_client(
@@ -292,7 +294,7 @@ langfuse.trace(
         "agent_count": 8,
         "total_cost_usd": 0.15
     },
-    tags=["production", "yg-starter", "security"]
+    tags=["production", "project", "security"]
 )
 ```
 
@@ -304,7 +306,7 @@ langfuse.trace(
 
 ---
 
-## YG Starter Integration
+## this project Integration
 
 ### Setup (Already Complete)
 
@@ -527,7 +529,7 @@ ORDER BY date;
 - [Decorators Guide](https://langfuse.com/docs/sdk/python/decorators)
 - [Prompt Management](https://langfuse.com/docs/prompts)
 - [Self-Hosting](https://langfuse.com/docs/deployment/self-host)
-- [YG Starter Integration](https://github.com/yonatan-gross/YG Starter#langfuse-observability)
+- [this project Integration](https://github.com/yonatan-gross/this project#langfuse-observability)
 
 ---
 

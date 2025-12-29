@@ -10,21 +10,21 @@
 
 - [ ] **Database connection verified**
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c "SELECT version();"
-  # Expected: PostgreSQL 16.x
+  psql -h localhost -p 5432 -U postgres -c "SELECT version();"
+  # Expected: PostgreSQL 14+ with pgvector
   ```
 
 - [ ] **Database contains expected data**
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c \
+  psql -h localhost -p 5432 -U postgres -d myapp -c \
     "SELECT COUNT(*) FROM analyses WHERE status = 'completed';"
-  # Expected: 98 (or current golden dataset size)
+  # Expected: Your current dataset size
   ```
 
 - [ ] **Embeddings generated for all chunks**
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c \
-    "SELECT COUNT(*) FROM analysis_chunks WHERE vector IS NULL;"
+  psql -h localhost -p 5432 -U postgres -d myapp -c \
+    "SELECT COUNT(*) FROM analysis_chunks WHERE embedding IS NULL;"
   # Expected: 0 (no chunks without embeddings)
   ```
 
@@ -32,14 +32,14 @@
 
 - [ ] **URL contract verified (no placeholder URLs)**
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c \
-    "SELECT COUNT(*) FROM analyses WHERE url LIKE '%yg-starter.dev%';"
+  psql -h localhost -p 5432 -U postgres -d myapp -c \
+    "SELECT COUNT(*) FROM analyses WHERE url LIKE '%placeholder%' OR url LIKE '%example.com%';"
   # Expected: 0 (no placeholder URLs)
   ```
 
 - [ ] **All analyses have artifacts**
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c \
+  psql -h localhost -p 5432 -U postgres -d myapp -c \
     "SELECT COUNT(*) FROM analyses a
      LEFT JOIN artifacts ar ON a.id = ar.analysis_id
      WHERE ar.id IS NULL AND a.status = 'completed';"
@@ -48,7 +48,7 @@
 
 - [ ] **No orphaned chunks**
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c \
+  psql -h localhost -p 5432 -U postgres -d myapp -c \
     "SELECT COUNT(*) FROM analysis_chunks c
      LEFT JOIN analyses a ON c.analysis_id = a.id
      WHERE a.id IS NULL;"
@@ -59,21 +59,22 @@
 
 - [ ] **Backup script exists**
   ```bash
-  ls -lh /Users/yonatangross/coding/YG Starter/backend/scripts/backup_golden_dataset.py
+  ls -lh backend/scripts/backup_golden_dataset.py
   # Expected: File exists
   ```
 
 - [ ] **Dependencies installed**
   ```bash
-  cd /Users/yonatangross/coding/YG Starter/backend
-  poetry install
+  cd backend
+  pip install -r requirements.txt
+  # OR: uv sync
   # Expected: All dependencies installed
   ```
 
 - [ ] **Data directory exists**
   ```bash
-  mkdir -p /Users/yonatangross/coding/YG Starter/backend/data
-  ls -ld /Users/yonatangross/coding/YG Starter/backend/data
+  mkdir -p backend/data
+  ls -ld backend/data
   # Expected: Directory exists and is writable
   ```
 
@@ -85,26 +86,26 @@
 
 - [ ] **Execute backup command**
   ```bash
-  cd /Users/yonatangross/coding/YG Starter/backend
-  poetry run python scripts/backup_golden_dataset.py backup
+  cd backend
+  python scripts/backup_golden_dataset.py backup
+  # OR: uv run python scripts/backup_golden_dataset.py backup
   ```
 
 - [ ] **Verify backup output shows success**
-  - [ ] "BACKUP COMPLETE (v2.0)" message displayed
-  - [ ] Analyses count matches expected (98)
-  - [ ] Artifacts count matches expected (98)
-  - [ ] Chunks count matches expected (415)
-  - [ ] Fixtures count matches expected (98 documents)
+  - [ ] "BACKUP COMPLETE" message displayed
+  - [ ] Analyses count matches expected
+  - [ ] Artifacts count matches expected
+  - [ ] Chunks count matches expected
 
 - [ ] **Check backup file created**
   ```bash
-  ls -lh /Users/yonatangross/coding/YG Starter/backend/data/golden_dataset_backup.json
-  # Expected: ~2.5 MB file
+  ls -lh backend/data/golden_dataset_backup.json
+  # Expected: JSON file with reasonable size (1-10 MB typical)
   ```
 
 - [ ] **Check metadata file created**
   ```bash
-  ls -lh /Users/yonatangross/coding/YG Starter/backend/data/golden_dataset_metadata.json
+  ls -lh backend/data/golden_dataset_metadata.json
   # Expected: ~1 KB file
   ```
 
@@ -112,7 +113,7 @@
 
 - [ ] **Run verification command**
   ```bash
-  poetry run python scripts/backup_golden_dataset.py verify
+  python scripts/backup_golden_dataset.py verify
   ```
 
 - [ ] **Verify output shows valid backup**
@@ -120,22 +121,20 @@
   - [ ] Analyses count correct
   - [ ] Artifacts count correct
   - [ ] Chunks count correct
-  - [ ] Fixtures included (documents, URL maps, queries)
   - [ ] Referential integrity: OK
   - [ ] All analyses have artifacts: OK
   - [ ] No placeholder URLs warning
 
 - [ ] **Verify backup file is valid JSON**
   ```bash
-  cat /Users/yonatangross/coding/YG Starter/backend/data/golden_dataset_backup.json | jq '.'
+  cat backend/data/golden_dataset_backup.json | jq '.'
   # Expected: Valid JSON, no parse errors
   ```
 
 - [ ] **Check backup version**
   ```bash
-  cat /Users/yonatangross/coding/YG Starter/backend/data/golden_dataset_backup.json | \
-    jq '.version'
-  # Expected: "2.0"
+  cat backend/data/golden_dataset_backup.json | jq '.version'
+  # Expected: "2.0" or your current version
   ```
 
 ### Commit Backup
@@ -148,10 +147,10 @@
 
 - [ ] **Write descriptive commit message**
   ```bash
-  git commit -m "chore: golden dataset backup (98 analyses, 415 chunks)
+  git commit -m "chore: golden dataset backup (N analyses, M chunks)
 
-  - Backup version: 2.0 (includes fixtures)
-  - Pass rate: 91.6% (186/203 queries)
+  - Backup version: 2.0
+  - Pass rate: X% (Y/Z queries)
   - Changes: [describe any additions/removals]"
   ```
 
@@ -168,34 +167,34 @@
 
 - [ ] **Backup file exists**
   ```bash
-  ls -lh /Users/yonatangross/coding/YG Starter/backend/data/golden_dataset_backup.json
+  ls -lh backend/data/golden_dataset_backup.json
   # Expected: File exists
   ```
 
 - [ ] **Backup integrity verified**
   ```bash
-  cd /Users/yonatangross/coding/YG Starter/backend
-  poetry run python scripts/backup_golden_dataset.py verify
+  cd backend
+  python scripts/backup_golden_dataset.py verify
   # Expected: "BACKUP IS VALID"
   ```
 
 - [ ] **Backup version compatible**
   ```bash
   cat backend/data/golden_dataset_backup.json | jq '.version'
-  # Expected: "1.0" or "2.0" (script handles both)
+  # Expected: Compatible version (script should handle 1.0 and 2.0)
   ```
 
 ### Database State Assessment
 
 - [ ] **Database accessible**
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c "SELECT 1;"
+  psql -h localhost -p 5432 -U postgres -c "SELECT 1;"
   # Expected: "1"
   ```
 
 - [ ] **Current data count known**
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c "SELECT COUNT(*) FROM analyses;"
+  psql -h localhost -p 5432 -U postgres -d myapp -c "SELECT COUNT(*) FROM analyses;"
   # Note the count for comparison after restore
   ```
 
@@ -213,13 +212,14 @@
 - [ ] **PostgreSQL running**
   ```bash
   docker compose ps postgres
-  # Expected: State = "running"
+  # OR: pg_isready -h localhost -p 5432
+  # Expected: Database is ready
   ```
 
 - [ ] **Database migrations applied**
   ```bash
-  cd /Users/yonatangross/coding/YG Starter/backend
-  poetry run alembic current
+  cd backend
+  alembic current
   # Expected: Shows latest migration revision
   ```
 
@@ -235,7 +235,7 @@
 
 - [ ] **Sufficient disk space**
   ```bash
-  df -h /Users/yonatangross/coding/YG Starter/backend/data
+  df -h backend/data
   # Expected: At least 1 GB free
   ```
 
@@ -249,15 +249,15 @@
 
 - [ ] **Execute restore command**
   ```bash
-  cd /Users/yonatangross/coding/YG Starter/backend
-  poetry run python scripts/backup_golden_dataset.py restore
+  cd backend
+  python scripts/backup_golden_dataset.py restore
   ```
 
 **Option B: Replace existing data (DESTRUCTIVE)**
 
 - [ ] **CONFIRM backup is valid** (run verify again)
   ```bash
-  poetry run python scripts/backup_golden_dataset.py verify
+  python scripts/backup_golden_dataset.py verify
   # Expected: "BACKUP IS VALID"
   ```
 
@@ -268,7 +268,7 @@
 
 - [ ] **Execute restore with --replace flag**
   ```bash
-  poetry run python scripts/backup_golden_dataset.py restore --replace
+  python scripts/backup_golden_dataset.py restore --replace
   ```
 
 ### Monitor Restore Progress
@@ -276,13 +276,10 @@
 - [ ] **Watch for restore stages**
   - [ ] "Loaded backup from: ..." (backup file loaded)
   - [ ] "Backup version: 2.0" (schema version)
-  - [ ] "Restoring 98 analyses..." (analyses being inserted)
-  - [ ] "Restoring 98 artifacts..." (artifacts being inserted)
-  - [ ] "Restoring 415 chunks (regenerating embeddings)..." (chunks + embeddings)
-  - [ ] "Restored 50/415 chunks" (progress updates)
-  - [ ] "Restored 100/415 chunks"
-  - [ ] "Restored 150/415 chunks"
-  - [ ] ... (continues until 415/415)
+  - [ ] "Restoring N analyses..." (analyses being inserted)
+  - [ ] "Restoring N artifacts..." (artifacts being inserted)
+  - [ ] "Restoring M chunks (regenerating embeddings)..." (chunks + embeddings)
+  - [ ] Progress updates showing chunk restoration
 
 - [ ] **Check for errors during embedding generation**
   - [ ] No "Failed to generate embedding" warnings
@@ -291,48 +288,38 @@
 
 - [ ] **Verify restore completion message**
   - [ ] "RESTORE COMPLETE" displayed
-  - [ ] Analyses: 98
-  - [ ] Artifacts: 98
-  - [ ] Chunks: 415
+  - [ ] Counts match backup metadata
 
 ### Post-Restore Verification
 
 - [ ] **Check database counts**
   ```bash
   # Analyses
-  psql -h localhost -p 5437 -U yg-starter -c \
+  psql -h localhost -p 5432 -U postgres -d myapp -c \
     "SELECT COUNT(*) FROM analyses WHERE status = 'completed';"
-  # Expected: 98
+  # Expected: Matches backup metadata
 
   # Artifacts
-  psql -h localhost -p 5437 -U yg-starter -c "SELECT COUNT(*) FROM artifacts;"
-  # Expected: 98
+  psql -h localhost -p 5432 -U postgres -d myapp -c "SELECT COUNT(*) FROM artifacts;"
+  # Expected: Matches backup metadata
 
   # Chunks
-  psql -h localhost -p 5437 -U yg-starter -c "SELECT COUNT(*) FROM analysis_chunks;"
-  # Expected: 415
+  psql -h localhost -p 5432 -U postgres -d myapp -c "SELECT COUNT(*) FROM analysis_chunks;"
+  # Expected: Matches backup metadata
   ```
 
 - [ ] **Verify embeddings generated**
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c \
-    "SELECT COUNT(*) FROM analysis_chunks WHERE vector IS NULL;"
+  psql -h localhost -p 5432 -U postgres -d myapp -c \
+    "SELECT COUNT(*) FROM analysis_chunks WHERE embedding IS NULL;"
   # Expected: 0 (all chunks have embeddings)
   ```
 
 - [ ] **Verify URL contract maintained**
   ```bash
-  psql -h localhost -p 5437 -U yg-starter -c \
-    "SELECT COUNT(*) FROM analyses WHERE url LIKE '%yg-starter.dev%';"
+  psql -h localhost -p 5432 -U postgres -d myapp -c \
+    "SELECT COUNT(*) FROM analyses WHERE url LIKE '%placeholder%';"
   # Expected: 0 (no placeholder URLs)
-  ```
-
-- [ ] **Check sample data integrity**
-  ```bash
-  # Verify a known document exists
-  psql -h localhost -p 5437 -U yg-starter -c \
-    "SELECT title FROM analyses WHERE url = 'https://docs.python.org/3/library/asyncio.html';"
-  # Expected: Row returned with title
   ```
 
 ---
@@ -343,14 +330,14 @@
 
 - [ ] **Run smoke tests**
   ```bash
-  cd /Users/yonatangross/coding/YG Starter/backend
-  poetry run pytest tests/smoke/retrieval/test_retrieval_quality.py -v
+  cd backend
+  pytest tests/smoke/retrieval/test_retrieval_quality.py -v
   ```
 
 - [ ] **Check pass rate**
-  - [ ] Total queries: 203
-  - [ ] Expected pass rate: ~91.6% (186/203 queries)
-  - [ ] Actual pass rate: ____ (fill in from test output)
+  - [ ] Total queries tested
+  - [ ] Expected pass rate (your baseline, e.g., 90%)
+  - [ ] Actual pass rate from test output
   - [ ] Pass rate within acceptable range (±2%)
 
 - [ ] **No critical regressions**
@@ -359,163 +346,15 @@
     - [ ] Hybrid search config unchanged
     - [ ] Backup file not corrupted
 
-### Integration Tests
-
-- [ ] **Run API integration tests** (if backend running)
-  ```bash
-  # Start backend
-  docker compose up -d backend
-
-  # Wait for startup
-  sleep 5
-
-  # Health check
-  curl -f http://localhost:8500/health
-  # Expected: 200 OK
-
-  # Run integration tests
-  poetry run pytest tests/integration/test_artifact_api.py -v
-  # Expected: All tests pass
-  ```
-
-### Fixture Validation
-
-- [ ] **Verify fixture files restored** (v2.0 backups only)
-  ```bash
-  ls -lh /Users/yonatangross/coding/YG Starter/backend/tests/smoke/retrieval/fixtures/
-  # Expected:
-  # - documents_expanded.json
-  # - source_url_map.json
-  # - queries.json
-  ```
-
-- [ ] **Check fixture counts**
-  ```bash
-  cat backend/tests/smoke/retrieval/fixtures/documents_expanded.json | \
-    jq '.documents | length'
-  # Expected: 98
-
-  cat backend/tests/smoke/retrieval/fixtures/queries.json | \
-    jq '.queries | length'
-  # Expected: 203
-  ```
-
----
-
-## Rollback Checklist (If Restore Fails)
-
-### Immediate Actions
-
-- [ ] **Stop all database writes**
-  ```bash
-  docker compose stop backend
-  ```
-
-- [ ] **Document failure details**
-  - [ ] Error message: ______________________
-  - [ ] Failed at stage: ______________________
-  - [ ] Chunks restored before failure: ______________________
-
-### Rollback Options
-
-**Option 1: Re-run restore (if partial failure)**
-
-- [ ] **Identify cause of failure** (API rate limit, network issue, etc.)
-
-- [ ] **Fix issue** (increase timeout, add API key, etc.)
-
-- [ ] **Re-run restore with --replace**
-  ```bash
-  poetry run python scripts/backup_golden_dataset.py restore --replace
-  ```
-
-**Option 2: Restore from SQL dump (if available)**
-
-- [ ] **Check for SQL dump**
-  ```bash
-  ls -lh /Users/yonatangross/coding/YG Starter/backend/data/golden_dataset_dump.sql
-  # If exists, use pg_restore
-  ```
-
-- [ ] **Drop and recreate database**
-  ```bash
-  docker compose down postgres
-  docker compose up -d postgres
-  poetry run alembic upgrade head
-  ```
-
-- [ ] **Import SQL dump**
-  ```bash
-  psql -h localhost -p 5437 -U yg-starter < \
-    /Users/yonatangross/coding/YG Starter/backend/data/golden_dataset_dump.sql
-  ```
-
-**Option 3: Restore from git history (if committed)**
-
-- [ ] **Find last good backup commit**
-  ```bash
-  git log --oneline -- backend/data/golden_dataset_backup.json
-  ```
-
-- [ ] **Checkout previous backup**
-  ```bash
-  git checkout HEAD~1 -- backend/data/golden_dataset_backup.json
-  ```
-
-- [ ] **Re-run restore**
-  ```bash
-  poetry run python scripts/backup_golden_dataset.py restore --replace
-  ```
-
----
-
-## Post-Restore Cleanup
-
-### Documentation
-
-- [ ] **Update CURRENT_STATUS.md** (if significant changes)
-  - [ ] Document restore date
-  - [ ] Document restore reason (new env, disaster recovery, etc.)
-  - [ ] Document pass rate after restore
-
-- [ ] **Update golden dataset metadata** (if expanded)
-  ```bash
-  cat backend/data/golden_dataset_metadata.json
-  # Verify counts are current
-  ```
-
-### Monitoring
-
-- [ ] **Monitor retrieval quality** (first 24 hours)
-  ```bash
-  # Run tests daily for a week to ensure stability
-  poetry run pytest tests/smoke/retrieval/test_retrieval_quality.py -v
-  ```
-
-- [ ] **Monitor API errors** (if production)
-  - [ ] Check logs for embedding errors
-  - [ ] Check logs for search errors
-  - [ ] Check logs for database connection errors
-
-### Optional: Create New Backup
-
-- [ ] **If restore modified data, create new backup**
-  ```bash
-  poetry run python scripts/backup_golden_dataset.py backup
-  poetry run python scripts/backup_golden_dataset.py verify
-  git add backend/data/golden_dataset_backup.json
-  git commit -m "chore: golden dataset backup after restore"
-  ```
-
 ---
 
 ## Quick Reference
 
 ### Full Backup Workflow
 ```bash
-cd /Users/yonatangross/coding/YG Starter/backend
-poetry run python scripts/backup_golden_dataset.py backup
-poetry run python scripts/backup_golden_dataset.py verify
+cd backend
+python scripts/backup_golden_dataset.py backup
+python scripts/backup_golden_dataset.py verify
 git add data/golden_dataset_backup.json data/golden_dataset_metadata.json
 git commit -m "chore: golden dataset backup"
 git push
@@ -523,22 +362,22 @@ git push
 
 ### Full Restore Workflow (New Environment)
 ```bash
-cd /Users/yonatangross/coding/YG Starter/backend
+cd backend
 docker compose up -d postgres
 sleep 5
-poetry run alembic upgrade head
-poetry run python scripts/backup_golden_dataset.py verify
-poetry run python scripts/backup_golden_dataset.py restore
-poetry run pytest tests/smoke/retrieval/test_retrieval_quality.py -v
+alembic upgrade head
+python scripts/backup_golden_dataset.py verify
+python scripts/backup_golden_dataset.py restore
+pytest tests/smoke/retrieval/test_retrieval_quality.py -v
 ```
 
 ### Full Restore Workflow (Replace Existing)
 ```bash
-cd /Users/yonatangross/coding/YG Starter/backend
-poetry run python scripts/backup_golden_dataset.py verify
+cd backend
+python scripts/backup_golden_dataset.py verify
 # CONFIRM: I understand this is destructive
-poetry run python scripts/backup_golden_dataset.py restore --replace
-poetry run pytest tests/smoke/retrieval/test_retrieval_quality.py -v
+python scripts/backup_golden_dataset.py restore --replace
+pytest tests/smoke/retrieval/test_retrieval_quality.py -v
 ```
 
 ---

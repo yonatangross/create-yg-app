@@ -9,7 +9,7 @@ version: '3.8'
 services:
   redis:
     image: redis/redis-stack:latest  # Includes RediSearch + RedisJSON
-    container_name: yg-starter-redis-cache
+    container_name: project-redis-cache
     ports:
       - "6379:6379"      # Redis
       - "8001:8001"      # RedisInsight UI
@@ -23,13 +23,13 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - yg-starter-network
+      - project-network
 
 volumes:
   redis-data:
 
 networks:
-  yg-starter-network:
+  project-network:
     driver: bridge
 ```
 

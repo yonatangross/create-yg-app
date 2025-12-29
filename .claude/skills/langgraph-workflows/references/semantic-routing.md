@@ -28,7 +28,7 @@
 
 ## The Routing Mismatch Problem
 
-In YG Starter, we have **two routing mechanisms that conflict**:
+In this project, we have **two routing mechanisms that conflict**:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐

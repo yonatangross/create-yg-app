@@ -1,8 +1,8 @@
-# YG Starter Retrieval System
+# this project Retrieval System
 
 ## Overview
 
-YG Starter's hybrid retrieval system combines vector embeddings (Voyage AI) with PostgreSQL full-text search (BM25) using Reciprocal Rank Fusion for optimal search quality.
+this project's hybrid retrieval system combines vector embeddings (Voyage AI) with PostgreSQL full-text search (BM25) using Reciprocal Rank Fusion for optimal search quality.
 
 **Key Stats (Production):**
 - **415 chunks** across 98 analyses
@@ -273,7 +273,7 @@ fetch_limit = top_k * FETCH_MULTIPLIER  # 30 for top_k=10
 # Results:
 1x multiplier: 87.2% pass rate
 2x multiplier: 89.5% pass rate (+2.3%)
-3x multiplier: 91.1% pass rate (+1.6%)  ← YG Starter uses this
+3x multiplier: 91.1% pass rate (+1.6%)  ← this project uses this
 4x multiplier: 91.3% pass rate (+0.2%, diminishing returns)
 ```
 
@@ -326,7 +326,7 @@ async def test_golden_queries():
 
 ```bash
 cd backend
-poetry run pytest tests/integration/test_retrieval_quality.py -v
+uv run pytest tests/integration/test_retrieval_quality.py -v
 
 # Output:
 # test_golden_queries PASSED
@@ -370,6 +370,6 @@ async def search(request: SearchQuery):
 
 ## References
 
-- YG Starter Backend: `backend/app/shared/services/search/`
+- this project Backend: `backend/app/shared/services/search/`
 - PGVector Docs: [https://github.com/pgvector/pgvector](https://github.com/pgvector/pgvector)
 - Voyage AI Docs: [https://docs.voyageai.com](https://docs.voyageai.com)

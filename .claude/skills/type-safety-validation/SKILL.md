@@ -296,7 +296,7 @@ export function PostList() {
 
 ## Python Type Safety with Ty
 
-**YG Starter uses ty**, a Rust-based static type checker for Python that enforces stricter type safety than mypy.
+**Modern Python applications use ty**, a Rust-based static type checker for Python that enforces stricter type safety than mypy.
 
 ### Pattern: Safe Dict Extraction (Ty-Compliant)
 
@@ -577,11 +577,18 @@ switch (status) {
 
 ---
 
-**Skill Version**: 1.2.0
-**Last Updated**: 2025-12-27
+**Skill Version**: 1.3.0
+**Last Updated**: 2025-12-29
 **Maintained by**: AI Agent Hub Team
 
 ## Changelog
+
+### v1.3.0 (2025-12-29)
+- Updated all examples to use real-world dashboard/app scenarios (removed SkillForge/project references)
+- Changed "this project uses ty" to "Modern Python applications use ty"
+- Updated capabilities.json: "project-integration" → "fullstack-integration"
+- Updated example references to "Real-world dashboard integration examples"
+- All code examples now use concrete e-commerce/dashboard types
 
 ### v1.2.0 (2025-12-27)
 - Added Python `NewType` pattern for branded types (zero-overhead compile-time safety)

@@ -1,12 +1,12 @@
-# YG Starter Workflow Resilience Integration
+# a production multi-agent system Workflow Resilience Integration
 
-This example shows how to wire resilience patterns into the YG Starter analysis pipeline.
+This example shows how to wire resilience patterns into the a production multi-agent system analysis pipeline.
 
 ## Current Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│                    YG Starter Analysis Pipeline                     │
+│                    a production multi-agent system Analysis Pipeline                     │
 ├────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │   Content ─▶ [Supervisor] ─▶ [Agent Fan-Out] ─▶ [Aggregate] ─▶ ... │
@@ -429,7 +429,7 @@ RETRY_MAX_DELAY=30.0
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│                   YG Starter Resilience Dashboard                   │
+│                   a production multi-agent system Resilience Dashboard                   │
 ├────────────────────────────────────────────────────────────────────┤
 │                                                                     │
 │   CIRCUIT BREAKERS                                                 │

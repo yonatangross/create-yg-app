@@ -1,10 +1,10 @@
-# YG Starter Langfuse Traces - Real Implementation
+# this project Langfuse Traces - Real Implementation
 
-This document shows how YG Starter uses Langfuse for end-to-end LLM observability across its 8-agent LangGraph workflow.
+This document shows how this project uses Langfuse for end-to-end LLM observability across its 8-agent LangGraph workflow.
 
 ## Overview
 
-**YG Starter Analysis Pipeline:**
+**this project Analysis Pipeline:**
 - 8 specialized agents (Tech Comparator, Security Auditor, Implementation Planner, etc.)
 - LangGraph supervisor pattern for orchestration
 - Langfuse traces for cost tracking, performance monitoring, and debugging
@@ -79,7 +79,7 @@ async def run_content_analysis(analysis_id: str, url: str) -> AnalysisResult:
             "workflow_type": "8-agent-supervisor",
             "version": "1.0.0"
         },
-        tags=["production", "yg-starter", "langgraph"]
+        tags=["production", "project", "langgraph"]
     )
 
     # Step 1: Fetch content (nested span)
@@ -414,7 +414,7 @@ ORDER BY t.latency_seconds DESC
 LIMIT 20;
 ```
 
-## Best Practices from YG Starter
+## Best Practices from this project
 
 1. **Always use @observe decorator** - Automatic parent-child span relationships
 2. **Set session_id for multi-step workflows** - Group related traces together
@@ -430,4 +430,4 @@ LIMIT 20;
 - [Langfuse Self-Hosting Guide](https://langfuse.com/docs/deployment/self-host)
 - [Python SDK Decorators](https://langfuse.com/docs/sdk/python/decorators)
 - [Cost Tracking](https://langfuse.com/docs/model-usage-and-cost)
-- [YG Starter QUALITY_INITIATIVE_FIXES.md](../../../docs/QUALITY_INITIATIVE_FIXES.md)
+- [this project QUALITY_INITIATIVE_FIXES.md](../../../docs/QUALITY_INITIATIVE_FIXES.md)

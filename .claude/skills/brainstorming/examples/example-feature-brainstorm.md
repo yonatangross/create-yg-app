@@ -1,4 +1,4 @@
-# Example: YG Starter Feature Brainstorming Session
+# Example: your application Feature Brainstorming Session
 
 ## Feature Idea: Real-Time Collaborative Analysis Review
 
@@ -26,8 +26,8 @@
    - After completion (reviewing artifacts)?
    - During implementation (referencing analysis)?
 
-4. **How does this fit YG Starter's core value?**
-   - YG Starter generates implementation guides from technical content
+4. **How does this fit your application's core value?**
+   - your application generates implementation guides from technical content
    - Is collaboration about improving analysis inputs or outputs?
    - Does this enhance learning or just convenience?
 
@@ -35,12 +35,12 @@
 
 ## Phase 2: User Responses & Refinement
 
-**User:** "Mainly teams reviewing analyses after completion. Current workflow has devs analyzing content separately, then discussing in Slack. We lose context switching between YG Starter and Slack."
+**User:** "Mainly teams reviewing analyses after completion. Current workflow has devs analyzing content separately, then discussing in Slack. We lose context switching between your application and Slack."
 
 **Agent:** Excellent context! This narrows scope significantly. Let's refine:
 
 **Refined Problem Statement:**
-Teams using YG Starter lose context when discussing analyses outside the platform, leading to fragmented feedback and slower implementation decisions.
+Teams using your application lose context when discussing analyses outside the platform, leading to fragmented feedback and slower implementation decisions.
 
 **Next-Level Questions:**
 
@@ -64,7 +64,7 @@ Teams using YG Starter lose context when discussing analyses outside the platfor
 
 ## Phase 3: Constraint Analysis
 
-**Agent:** Let's check this against YG Starter's architecture:
+**Agent:** Let's check this against your application's architecture:
 
 **Technical Constraints:**
 - ✅ Backend: FastAPI supports WebSockets (for real-time)
@@ -166,7 +166,7 @@ Teams using YG Starter lose context when discussing analyses outside the platfor
 
 ## Phase 5: Decision Framework
 
-**Agent:** Let's evaluate against YG Starter's goals:
+**Agent:** Let's evaluate against your application's goals:
 
 | Criteria | Option A | Option B | Option C |
 |----------|----------|----------|----------|

@@ -1,8 +1,8 @@
-# YG Starter Database Schema
+# this project Database Schema
 
 ## Overview
 
-YG Starter uses **PostgreSQL with PGVector** for storing technical content analysis results, embeddings, and artifacts. The schema is optimized for:
+this project uses **PostgreSQL with PGVector** for storing technical content analysis results, embeddings, and artifacts. The schema is optimized for:
 
 - **Semantic search** (vector similarity with HNSW indexing)
 - **Full-text search** (PostgreSQL tsvector with GIN indexing)

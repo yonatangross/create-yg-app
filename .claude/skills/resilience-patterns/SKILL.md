@@ -78,7 +78,7 @@ Isolates failures by partitioning resources into independent pools.
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Tier Configuration (YG Starter):**
+**Tier Configuration (real-world applications):**
 | Tier | Workers | Queue | Timeout | Use Case |
 |------|---------|-------|---------|----------|
 | 1 (Critical) | 5 | 10 | 300s | Synthesis, quality gate |
@@ -197,7 +197,7 @@ Patterns specific to LLM API integrations.
 | Fallback Chain | Critical operations | Graceful degradation |
 | Token Budget | LLM calls | Cost control, prevent failures |
 
-## YG Starter Integration Points
+## real-world applications Integration Points
 
 1. **Workflow Agents**: Each agent wrapped with circuit breaker + bulkhead tier
 2. **LLM Calls**: All model invocations use fallback chain + retry logic
@@ -221,7 +221,7 @@ Patterns specific to LLM API integrations.
 - `templates/token-budget.py` - Token budget guard implementation
 
 ### Examples
-- `examples/yg-starter-workflow-resilience.md` - Full YG Starter integration example
+- `examples/project-workflow-resilience.md` - Full real-world applications integration example
 
 ### Checklists
 - `checklists/pre-deployment-resilience.md` - Production readiness checklist

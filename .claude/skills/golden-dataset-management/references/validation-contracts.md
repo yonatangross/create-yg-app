@@ -8,7 +8,7 @@
 
 ```python
 # WRONG - Placeholder URL
-analysis.url = "https://yg-starter.dev/placeholder/doc-123"
+analysis.url = "https://project.dev/placeholder/doc-123"
 
 # Problems:
 # 1. Can't re-fetch content if needed
@@ -34,7 +34,7 @@ async def check_url_contract() -> list[str]:
 
     async with get_session() as session:
         query = select(Analysis).where(
-            Analysis.url.like("%yg-starter.dev%") |
+            Analysis.url.like("%project.dev%") |
             Analysis.url.like("%placeholder%") |
             Analysis.url.like("%example.com%") |
             Analysis.url.like("%test.local%")
@@ -259,13 +259,13 @@ async def verify_golden_dataset() -> dict:
 cd backend
 
 # 1. Backup current data
-poetry run python scripts/backup_golden_dataset.py backup
+uv run python scripts/backup_golden_dataset.py backup
 
 # 2. Verify backup integrity
-poetry run python scripts/backup_golden_dataset.py verify
+uv run python scripts/backup_golden_dataset.py verify
 
 # 3. Run retrieval quality tests
-poetry run pytest tests/integration/test_retrieval_quality.py
+uv run pytest tests/integration/test_retrieval_quality.py
 
 # 4. Check for regressions
 # Expected: 91.6% pass rate, 0.777 MRR
@@ -301,7 +301,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd backend
-          poetry install
+          uv sync
 
       - name: Start PostgreSQL
         run: docker compose up -d postgres
@@ -309,27 +309,29 @@ jobs:
       - name: Run migrations
         run: |
           cd backend
-          poetry run alembic upgrade head
+          uv run alembic upgrade head
 
       - name: Restore golden dataset
         run: |
           cd backend
-          poetry run python scripts/backup_golden_dataset.py restore
+          uv run python scripts/backup_golden_dataset.py restore
 
       - name: Validate dataset
         run: |
           cd backend
-          poetry run python scripts/backup_golden_dataset.py verify
+          uv run python scripts/backup_golden_dataset.py verify
 
       - name: Run retrieval tests
         run: |
           cd backend
-          poetry run pytest tests/integration/test_retrieval_quality.py -v
+          uv run pytest tests/integration/test_retrieval_quality.py -v
 ```
 
 ---
 
 ## References
 
-- YG Starter: `backend/scripts/backup_golden_dataset.py`
-- YG Starter: `backend/tests/integration/test_retrieval_quality.py`
+**Example Implementation:**
+- Backup script: `backend/scripts/backup_golden_dataset.py`
+- Retrieval tests: `backend/tests/integration/test_retrieval_quality.py`
+- Validation utilities: `backend/scripts/validate_golden_dataset.py`

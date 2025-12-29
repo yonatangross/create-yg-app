@@ -299,7 +299,7 @@ jobs:
             -d '{"model":"nomic-embed-text","prompt":"warmup"}' > /dev/null
 
       - name: Run tests
-        run: poetry run pytest tests/ -v
+        run: uv run pytest tests/ -v
 ```
 
 ### Pre-Warming Strategy

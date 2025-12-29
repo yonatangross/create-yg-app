@@ -287,7 +287,7 @@ Comprehensive checklist for planning, creating, and maintaining ASCII diagrams i
 - [ ] Document what's intentionally omitted
 - [ ] Plan for additional views (security, data, etc.)
 
-## YG Starter-Specific Considerations
+## Real-World Application Patterns
 
 ### Multi-Agent Architecture
 - [ ] Show all 8 worker agents clearly
@@ -396,7 +396,20 @@ Comprehensive checklist for planning, creating, and maintaining ASCII diagrams i
 
 **Remember:** The best diagram is the one that clearly communicates the intended message to the target audience. Clarity trumps complexity every time.
 
-**YG Starter Priority Diagrams:**
+**Common Architecture Patterns:
+1. System overview (microservices / monolith)
+2. Data flow diagrams (request/response cycles)
+3. Real-time update flows (SSE / WebSocket)
+4. Database schemas with relationships
+5. Search architecture (vector + keyword hybrid)
+6. Deployment topology (Kubernetes / Docker)
+
+For Multi-Agent AI Systems:
+1. Agent workflow and orchestration
+2. LLM API integration patterns
+3. Vector database architecture
+4. Caching strategy (prompt + semantic)
+5. Observability and tracing**
 1. System overview (all layers)
 2. LangGraph multi-agent workflow
 3. SSE real-time update flow

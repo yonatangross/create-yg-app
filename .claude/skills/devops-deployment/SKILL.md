@@ -631,26 +631,26 @@ groups:
 
 ---
 
-## Real-World YG Starter Examples
+## Real-World Examples
 
-### Example 1: Local Development with Docker Compose
+### Example 1: E-commerce Platform with Docker Compose
 
-**YG Starter's actual docker-compose.yml:**
+**Full-stack e-commerce development environment:**
 ```yaml
 version: '3.8'
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: postgres:16-alpine
     environment:
-      POSTGRES_USER: yg-starter
+      POSTGRES_USER: shopuser
       POSTGRES_PASSWORD: dev_password
-      POSTGRES_DB: yg-starter_dev
+      POSTGRES_DB: shop_dev
     ports:
       - "5437:5432"  # Avoid conflict with host postgres
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yg-starter"]
+      test: ["CMD-SHELL", "pg_isready -U shopuser"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -662,35 +662,55 @@ services:
     command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
       - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
     ports:
-      - "8500:8500"
+      - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://yg-starter:dev_password@postgres:5432/yg-starter_dev
+      DATABASE_URL: postgresql://shopuser:dev_password@postgres:5432/shop_dev
       REDIS_URL: redis://redis:6379
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./backend:/app  # Hot reload
+      - /app/.venv  # Persist virtualenv
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
     ports:
-      - "5173:5173"
+      - "3000:3000"
     environment:
-      VITE_API_URL: http://localhost:8500
+      VITE_API_URL: http://localhost:8000
+      VITE_STRIPE_PUBLIC_KEY: ${VITE_STRIPE_PUBLIC_KEY}
     volumes:
       - ./frontend:/app
       - /app/node_modules  # Avoid overwriting node_modules
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    command: celery -A app.worker worker --loglevel=info
+    environment:
+      DATABASE_URL: postgresql://shopuser:dev_password@postgres:5432/shop_dev
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
 
 volumes:
   pgdata:
@@ -703,9 +723,9 @@ volumes:
 - Volume mounts for hot reload during development
 - Named volumes for data persistence
 
-### Example 2: GitHub Actions Workflow
+### Example 2: GitHub Actions CI/CD Pipeline (2025)
 
-**YG Starter's backend CI/CD pipeline:**
+**Modern FastAPI backend with Ruff and uv:**
 ```yaml
 name: Backend CI/CD
 
@@ -717,108 +737,231 @@ on:
     branches: [main, dev]
     paths: ['backend/**']
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-latest  # Latest LTS runner
     defaults:
       run:
         working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
-      - name: Cache Poetry Dependencies
-        uses: actions/cache@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('backend/poetry.lock') }}
+          version: "latest"
 
-      - name: Install Poetry
-        run: pip install poetry
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('backend/uv.lock') }}
 
-      - name: Install Dependencies
-        run: poetry install
+      - name: Install dependencies
+        run: uv sync --frozen --no-dev
 
-      - name: Run Ruff Format Check
-        run: poetry run ruff format --check app/
+      - name: Lint - Ruff format check
+        run: uv run ruff format --check app/
 
-      - name: Run Ruff Lint
-        run: poetry run ruff check app/
+      - name: Lint - Ruff code check
+        run: uv run ruff check app/
 
-      - name: Run Type Check
-        run: poetry run mypy app/ --ignore-missing-imports
+      - name: Type check with mypy
+        run: uv run mypy app/ --strict --ignore-missing-imports
 
-      - name: Run Tests
-        run: poetry run pytest tests/ --cov=app --cov-report=xml
+      - name: Run tests with coverage
+        env:
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+        run: uv run pytest tests/ --cov=app --cov-report=xml --cov-report=term -v
 
-      - name: Upload Coverage
-        uses: codecov/codecov-action@v3
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
           file: ./backend/coverage.xml
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   security-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Run Trivy Scan
+      - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: 'backend/'
           severity: 'CRITICAL,HIGH'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: [lint-and-test, security-scan]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:latest
+            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 ```
 
 **Key features:**
-- Path filtering (only run on backend changes)
-- Poetry dependency caching
-- Comprehensive quality checks (format, lint, type, test)
-- Security scanning with Trivy
+- Latest GitHub Actions runners (ubuntu-24.04)
+- uv for fast Python package management
+- Service containers for integration tests
+- Concurrency control to cancel outdated runs
+- Docker Buildx with GitHub Actions cache
+- SARIF upload for security findings
 
-### Example 3: Alembic Database Migrations
+### Example 3: Database Migration with Alembic (2025)
 
-**YG Starter migration pattern:**
+**E-commerce order tracking migration:**
 ```python
-# backend/alembic/versions/2024_12_15_add_langfuse_trace_id.py
-"""Add Langfuse trace_id to analyses
+# backend/alembic/versions/2025_12_29_add_order_tracking.py
+"""Add order tracking with shipment provider
 
-Revision ID: abc123def456
+Revision ID: a1b2c3d4e5f6
+Revises: prev_revision_id
+Create Date: 2025-12-29 10:30:00
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+# Revision identifiers
+revision = 'a1b2c3d4e5f6'
+down_revision = 'prev_revision_id'
+branch_labels = None
+depends_on = None
 
 def upgrade():
-    # Add nullable column first (backward compatible)
-    op.add_column('analyses',
-        sa.Column('langfuse_trace_id', sa.String(255), nullable=True)
+    # Add tracking column as nullable first (backward compatible)
+    op.add_column('orders',
+        sa.Column('tracking_number', sa.String(100), nullable=True)
     )
-    # Index for lookup performance
-    op.create_index('idx_analyses_langfuse_trace',
-        'analyses', ['langfuse_trace_id']
+    op.add_column('orders',
+        sa.Column('shipping_provider', sa.String(50), nullable=True)
+    )
+    op.add_column('orders',
+        sa.Column('shipped_at', sa.DateTime(timezone=True), nullable=True)
+    )
+
+    # Add composite index for tracking lookups
+    op.create_index(
+        'idx_orders_tracking',
+        'orders',
+        ['tracking_number', 'shipping_provider'],
+        unique=False
+    )
+
+    # Add check constraint for valid providers
+    op.create_check_constraint(
+        'ck_orders_shipping_provider',
+        'orders',
+        "shipping_provider IN ('USPS', 'UPS', 'FedEx', 'DHL')"
     )
 
 def downgrade():
-    op.drop_index('idx_analyses_langfuse_trace')
-    op.drop_column('analyses', 'langfuse_trace_id')
+    op.drop_constraint('ck_orders_shipping_provider', 'orders', type_='check')
+    op.drop_index('idx_orders_tracking', 'orders')
+    op.drop_column('orders', 'shipped_at')
+    op.drop_column('orders', 'shipping_provider')
+    op.drop_column('orders', 'tracking_number')
 ```
 
-**Migration workflow:**
+**Migration workflow with uv (2025):**
 ```bash
-# Create new migration
-poetry run alembic revision --autogenerate -m "Add langfuse trace ID"
+# Create new migration (auto-generate from models)
+uv run alembic revision --autogenerate -m "Add order tracking with shipment provider"
 
-# Review generated migration (ALWAYS review!)
-cat alembic/versions/abc123_add_langfuse_trace_id.py
+# ALWAYS review the generated migration!
+cat alembic/versions/*_add_order_tracking.py
 
-# Apply migration
-poetry run alembic upgrade head
+# Test migration in development
+uv run alembic upgrade head
 
-# Rollback if needed
-poetry run alembic downgrade -1
+# Verify schema changes
+uv run alembic current
+psql $DATABASE_URL -c "\d orders"
+
+# Rollback if issues found
+uv run alembic downgrade -1
+
+# Check migration history
+uv run alembic history --verbose
+```
+
+**Production migration checklist:**
+```bash
+# 1. Backup database
+pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# 2. Test migration on staging with production data snapshot
+uv run alembic upgrade head
+
+# 3. Monitor query performance
+EXPLAIN ANALYZE SELECT * FROM orders WHERE tracking_number = 'TRACK123';
+
+# 4. Deploy with zero downtime (nullable columns)
+# Phase 1: Add nullable columns
+# Phase 2: Backfill data
+# Phase 3: Add NOT NULL constraint (if needed)
 ```
 
 ---

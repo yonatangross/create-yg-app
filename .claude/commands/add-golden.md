@@ -104,7 +104,7 @@ Task(
        - Appropriate level of detail
 
     4. RELEVANCE (weight 0.30)
-       - Alignment with YG Starter domains:
+       - Alignment with this project domains:
          AI/ML, LangGraph, RAG, FastAPI, React, DevOps
        - Practical applicability
        - Technical value for developers
@@ -251,7 +251,7 @@ Task(
     Run these checks:
 
     1. URL VALIDATION
-       - Not a placeholder (no yg-starter.dev, example.com)
+       - Not a placeholder (no project.dev, example.com)
        - Uses HTTPS (except arxiv.org)
        - Not already in source_url_map.json
 
@@ -387,7 +387,7 @@ for query in generated_queries:
     queries.append(query)
 
 # 4. Validate fixture consistency
-poetry run python -c "
+uv run python -c "
 from backend.tests.smoke.retrieval.fixtures.loader import FixtureLoader
 loader = FixtureLoader(use_expanded=True)
 loader.validate()
@@ -412,9 +412,9 @@ print('✅ Fixture validation passed')
 
 ### Next Steps
 1. Review changes: `git diff tests/smoke/retrieval/fixtures/`
-2. Run tests: `poetry run pytest tests/smoke/retrieval/ -v`
+2. Run tests: `uv run pytest tests/smoke/retrieval/ -v`
 3. Commit: `/commit`
-4. Backup: `poetry run python scripts/backup_golden_dataset.py backup`
+4. Backup: `uv run python scripts/backup_golden_dataset.py backup`
 
 **Langfuse Trace:** {trace_url}
 ```

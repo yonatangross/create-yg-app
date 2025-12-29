@@ -86,7 +86,7 @@ Return structured pipeline report:
 
 ### Chunking Strategy
 ```python
-# YG Starter standard: semantic boundaries with overlap
+# this project standard: semantic boundaries with overlap
 CHUNK_CONFIG = {
     "target_tokens": 500,      # ~400-600 tokens per chunk
     "max_tokens": 800,         # Hard limit
@@ -103,7 +103,7 @@ CHUNK_CONFIG = {
 ### Embedding Providers
 | Provider | Dimensions | Use Case | Cost |
 |----------|------------|----------|------|
-| Voyage AI voyage-3 | 1024 | Production (YG Starter) | $0.06/1M tokens |
+| Voyage AI voyage-3 | 1024 | Production (this project) | $0.06/1M tokens |
 | OpenAI text-embedding-3-large | 3072 | High-fidelity | $0.13/1M tokens |
 | Ollama nomic-embed-text | 768 | CI/testing (free) | $0 |
 
@@ -122,7 +122,7 @@ def validate_embeddings(embeddings: list[list[float]]) -> dict:
 ## Example
 Task: "Regenerate embeddings for the golden dataset"
 
-1. Backup current embeddings: `poetry run python scripts/backup_embeddings.py`
+1. Backup current embeddings: `uv run python scripts/backup_embeddings.py`
 2. Load documents from golden dataset
 3. Apply chunking strategy with semantic boundaries
 4. Generate embeddings in batches of 100

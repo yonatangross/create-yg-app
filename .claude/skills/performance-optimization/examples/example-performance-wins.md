@@ -1,6 +1,6 @@
-# YG Starter Performance Wins - Real Optimization Examples
+# this project Performance Wins - Real Optimization Examples
 
-This document showcases actual performance optimizations from YG Starter's production implementation with before/after metrics.
+This document showcases actual performance optimizations from this project's production implementation with before/after metrics.
 
 ## Overview
 
@@ -722,7 +722,7 @@ MAX_STRING_LENGTH = 500  # Increased from 200
 
 ## References
 
-- [YG Starter Quality Initiative](../../../../docs/QUALITY_INITIATIVE_FIXES.md)
+- [this project Quality Initiative](../../../../docs/QUALITY_INITIATIVE_FIXES.md)
 - [Redis Connection Keepalive](../../../../backend/app/shared/services/cache/redis_connection.py)
 - [Hybrid Search Constants](../../../../backend/app/core/constants.py)
 - Template: `../templates/caching-patterns.ts`

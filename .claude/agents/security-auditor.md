@@ -61,9 +61,9 @@ Return structured security report:
 
 ## Task Boundaries
 **DO:**
-- Run `poetry run bandit -r app/ -f json` for Python security scan
+- Run `uv run bandit -r app/ -f json` for Python security scan
 - Run `npm audit --json` for JavaScript dependency audit
-- Run `poetry run pip-audit --format=json` for Python dependency audit
+- Run `uv run pip-audit --format=json` for Python dependency audit
 - Search for secrets patterns: API keys, passwords, tokens
 - Check for dangerous patterns: eval(), exec(), raw SQL, innerHTML
 - Verify CSRF protection on state-changing endpoints
@@ -102,10 +102,10 @@ Return structured security report:
 ## Scan Commands
 ```bash
 # Python security scan
-poetry run bandit -r backend/app/ -f json -o bandit-report.json
+uv run bandit -r backend/app/ -f json -o bandit-report.json
 
 # Python dependency audit
-poetry run pip-audit --format=json > pip-audit-report.json
+uv run pip-audit --format=json > pip-audit-report.json
 
 # JavaScript dependency audit
 cd frontend && npm audit --json > npm-audit-report.json
@@ -128,8 +128,8 @@ semgrep scan --config=p/security-audit --json > semgrep-report.json
 ## Example
 Task: "Run security audit before release"
 
-1. Run bandit scan: `poetry run bandit -r backend/app/ -f json`
-2. Run pip-audit: `poetry run pip-audit --format=json`
+1. Run bandit scan: `uv run bandit -r backend/app/ -f json`
+2. Run pip-audit: `uv run pip-audit --format=json`
 3. Run npm audit: `cd frontend && npm audit --json`
 4. Grep for secrets: API keys, passwords, tokens
 5. Check OWASP patterns in auth routes

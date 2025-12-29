@@ -1,7 +1,7 @@
 ---
 name: golden-dataset-curation
 description: Quality criteria, workflows, and multi-agent analysis patterns for curating high-quality golden dataset entries
-version: 1.0.0
+version: 2.0.0
 author: YG Starter AI Agent Hub
 tags: [golden-dataset, curation, quality, multi-agent, langfuse, 2025]
 ---
@@ -163,19 +163,19 @@ def classify_difficulty(document: dict) -> str:
 
 ### 4. Relevance (Weight: 0.30)
 
-**What it measures:** Alignment with YG Starter's technical domains
+**What it measures:** Alignment with your application's technical domains
 
-**Target domains:**
-- AI/ML (LangGraph, RAG, agents, embeddings)
-- Backend (FastAPI, PostgreSQL, APIs)
-- Frontend (React, TypeScript)
-- DevOps (Docker, Kubernetes, CI/CD)
-- Security (OWASP, authentication)
+**Example target domains:**
+- AI/ML (LangGraph, RAG, agents, embeddings, LLMs)
+- Backend (FastAPI, Node.js, PostgreSQL, APIs)
+- Frontend (React, TypeScript, Next.js)
+- DevOps (Docker, Kubernetes, CI/CD, monitoring)
+- Security (OWASP, authentication, encryption)
 
 **Thresholds:**
 - Perfect: 0.95-1.0 (core domain, highly relevant)
 - Acceptable: 0.70-0.94 (related domain)
-- Failing: <0.70 (off-topic for YG Starter)
+- Failing: <0.70 (off-topic for your use case)
 
 ---
 
@@ -469,7 +469,7 @@ def aggregate_results(
     if q["accuracy"]["score"] < 0.6:
         warnings.append("Low accuracy score - verify technical claims")
     if q["relevance"]["score"] < 0.7:
-        warnings.append("Low relevance - may be off-topic for YG Starter")
+        warnings.append("Low relevance - may be off-topic for your application")
     if domain_result["confidence"] < 0.7:
         warnings.append("Low confidence in domain classification")
 
@@ -585,5 +585,148 @@ Always record:
 
 ---
 
-**Version:** 1.0.0 (December 2025)
-**Issue:** #599
+## JSON Schema Validation (2025 Best Practice)
+
+### Document Schema with Strict Validation
+
+```typescript
+// Use Zod or JSON Schema for runtime validation
+import { z } from 'zod';
+
+export const documentSchema = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  title: z.string().min(10).max(200),
+  source_url: z.string().url(),
+  content_type: z.enum(['article', 'tutorial', 'research_paper', 'documentation', 'video_transcript', 'code_repository']),
+  tags: z.array(z.string()).min(2).max(10),
+  sections: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    content: z.string().min(50),
+    embedding_metadata: z.object({
+      model: z.string(),
+      dimensions: z.number(),
+      generated_at: z.string().datetime(),
+    }).optional(),
+  })).min(1),
+  metadata: z.object({
+    quality_score: z.number().min(0).max(1),
+    difficulty: z.enum(['trivial', 'easy', 'medium', 'hard', 'adversarial']),
+    curation_date: z.string().datetime(),
+    langfuse_trace_id: z.string().optional(),
+  }),
+});
+
+type Document = z.infer<typeof documentSchema>;
+```
+
+### Embedding Quality Metrics (2025)
+
+```python
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass
+class EmbeddingQualityMetrics:
+    """Track embedding quality for golden dataset."""
+
+    model_name: str  # e.g., "text-embedding-3-large"
+    model_version: str
+    dimensions: int
+    normalization: Literal["l2", "none"]
+
+    # Quality metrics
+    avg_magnitude: float  # Should be ~1.0 for normalized
+    std_magnitude: float  # Should be ~0 for normalized
+    sparsity: float  # % of near-zero values (0-1)
+
+    # Performance
+    generation_time_ms: float
+    batch_size: int
+
+    def validate(self) -> list[str]:
+        """Validate embedding quality."""
+        warnings = []
+
+        if self.normalization == "l2":
+            if abs(self.avg_magnitude - 1.0) > 0.01:
+                warnings.append(f"L2 normalized embeddings should have avg magnitude ~1.0, got {self.avg_magnitude}")
+            if self.std_magnitude > 0.1:
+                warnings.append(f"High variance in magnitudes: {self.std_magnitude}")
+
+        if self.sparsity > 0.8:
+            warnings.append(f"High sparsity ({self.sparsity:.1%}) may indicate low-quality embeddings")
+
+        if self.generation_time_ms > 1000:
+            warnings.append(f"Slow embedding generation: {self.generation_time_ms}ms")
+
+        return warnings
+```
+
+### Data Versioning (2025 Best Practice)
+
+```python
+from datetime import datetime
+from typing import Literal
+import hashlib
+
+@dataclass
+class DatasetVersion:
+    """Track dataset versions for reproducibility."""
+
+    version: str  # Semantic versioning: "2.1.0"
+    created_at: datetime
+
+    # Content hash for integrity
+    content_hash: str  # SHA256 of all documents
+
+    # Model info
+    embedding_model: str
+    embedding_dimensions: int
+
+    # Statistics
+    total_documents: int
+    total_chunks: int
+    total_queries: int
+
+    # Quality metrics
+    avg_quality_score: float
+    pass_rate: float  # Retrieval test pass rate
+
+    # Changes from previous version
+    changelog: list[dict]  # [{"action": "added", "count": 5, "description": "..."}]
+
+    @staticmethod
+    def calculate_content_hash(documents: list[dict]) -> str:
+        """Calculate reproducible content hash."""
+        # Sort documents by ID for deterministic hash
+        sorted_docs = sorted(documents, key=lambda d: d["id"])
+        content = json.dumps(sorted_docs, sort_keys=True)
+        return hashlib.sha256(content.encode()).hexdigest()
+
+    def save_to_file(self, path: Path):
+        """Save version metadata."""
+        with open(path, "w") as f:
+            json.dump({
+                "version": self.version,
+                "created_at": self.created_at.isoformat(),
+                "content_hash": self.content_hash,
+                "embedding_model": self.embedding_model,
+                "embedding_dimensions": self.embedding_dimensions,
+                "statistics": {
+                    "documents": self.total_documents,
+                    "chunks": self.total_chunks,
+                    "queries": self.total_queries,
+                },
+                "quality": {
+                    "avg_quality_score": self.avg_quality_score,
+                    "pass_rate": self.pass_rate,
+                },
+                "changelog": self.changelog,
+            }, f, indent=2)
+```
+
+---
+
+**Version:** 2.0.0 (January 2025)
+**Updated:** Modern patterns for AI/ML dataset curation

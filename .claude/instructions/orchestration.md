@@ -118,7 +118,7 @@ For complex multi-tool workflows, compose them:
 // Instead of 3 separate MCP tool calls:
 const composed = await mcp__MCP_DOCKER__code_mode({
   name: "full-stack-test",
-  servers: ["playwright", "yg-starter-postgres-dev", "langfuse"]
+  servers: ["playwright", "postgres-mcp", "langfuse"]
 });
 // Single tool that orchestrates all three
 ```
@@ -231,7 +231,7 @@ After completing tasks, record which MCP tools were useful:
     "task": "Create paginated search endpoint",
     "tools_used": [
       { "tool": "context7", "library": "/tiangolo/fastapi", "topic": "pagination" },
-      { "tool": "yg-starter-postgres-dev", "query": "test pagination query" }
+      { "tool": "postgres-mcp", "query": "test pagination query" }
     ],
     "token_savings": "Used composed workflow, saved ~1700 tokens"
   }

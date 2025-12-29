@@ -194,16 +194,16 @@ async def restore_golden_dataset(replace: bool = False):
 cd backend
 
 # Backup
-poetry run python scripts/backup_golden_dataset.py backup
+uv run python scripts/backup_golden_dataset.py backup
 
 # Restore (add to existing data)
-poetry run python scripts/backup_golden_dataset.py restore
+uv run python scripts/backup_golden_dataset.py restore
 
 # Restore (replace all data - DESTRUCTIVE!)
-poetry run python scripts/backup_golden_dataset.py restore --replace
+uv run python scripts/backup_golden_dataset.py restore --replace
 
 # Verify backup integrity
-poetry run python scripts/backup_golden_dataset.py verify
+uv run python scripts/backup_golden_dataset.py verify
 ```
 
 ---
@@ -282,7 +282,7 @@ psql $DATABASE_URL < backend/data/golden_dataset_dump.sql
 - DB version dependent
 - No easy inspection
 
-**YG Starter uses JSON (version controlled), SQL dump for local snapshots only.**
+**Best practice: Use JSON (version controlled), SQL dump for local snapshots only.**
 
 ---
 
@@ -313,5 +313,7 @@ async def restore_with_error_handling():
 
 ## References
 
-- YG Starter: `backend/scripts/backup_golden_dataset.py`
-- YG Starter: `backend/data/golden_dataset_backup.json`
+**Example Implementation:**
+- Backup script: `backend/scripts/backup_golden_dataset.py`
+- JSON backup: `backend/data/golden_dataset_backup.json`
+- Metadata: `backend/data/golden_dataset_metadata.json`

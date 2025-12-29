@@ -114,9 +114,9 @@ prod_prompt = langfuse.get_prompt("analyzer", label="production")
 6. **A/B test** new prompts before full rollout
 7. **Document changes** in version notes
 
-## YG Starter 4-Level Prompt Caching Architecture
+## this project 4-Level Prompt Caching Architecture
 
-YG Starter uses a multi-level caching strategy with Jinja2 templates as L4 fallback:
+this project uses a multi-level caching strategy with Jinja2 templates as L4 fallback:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -140,7 +140,7 @@ YG Starter uses a multi-level caching strategy with Jinja2 templates as L4 fallb
 
 ### L4 Jinja2 Template Fallback (Issue #414)
 
-When Langfuse is unavailable, YG Starter falls back to Jinja2 templates:
+When Langfuse is unavailable, this project falls back to Jinja2 templates:
 
 ```python
 from app.shared.services.prompts.template_loader import render_template

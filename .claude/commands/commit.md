@@ -23,17 +23,17 @@ fi
 **CRITICAL: Run every check that CI runs.**
 
 ```bash
-# Backend
+# Backend (from project root)
 cd backend
-poetry run ruff format --check app/   # Format check
-poetry run ruff check app/            # Lint check
-poetry run ty check app/ --exclude "app/evaluation/*"  # Type check
+uv run ruff format --check app/   # Format check
+uv run ruff check app/            # Lint check
+uv run ty check app/              # Type check
 
 # Frontend (if changed)
 cd ../frontend
-npm run format:check
 npm run lint
 npm run typecheck
+npm run build
 ```
 
 **Fix any failures before proceeding.**

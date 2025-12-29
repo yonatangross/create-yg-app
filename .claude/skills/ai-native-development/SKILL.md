@@ -1,8 +1,8 @@
 ---
 name: ai-native-development
 description: Build AI-first applications with RAG pipelines, embeddings, vector databases, agentic workflows, and LLM integration. Master prompt engineering, function calling, streaming responses, and cost optimization for 2025+ AI development. Includes local LLM inference with Ollama for 93% CI cost reduction.
-version: 1.2.0
-author: AI Agent Hub
+version: 1.3.0
+author: YG Starter Template
 tags: [ai, llm, rag, embeddings, vector-database, agents, langchain, ollama, local-inference, 2025]
 ---
 
@@ -11,6 +11,13 @@ tags: [ai, llm, rag, embeddings, vector-database, agents, langchain, ollama, loc
 ## Overview
 
 AI-Native Development focuses on building applications where AI is a first-class citizen, not an afterthought. This skill provides comprehensive patterns for integrating LLMs, implementing RAG (Retrieval-Augmented Generation), using vector databases, building agentic workflows, and optimizing AI application performance and cost.
+
+**Real-World Use Cases:**
+- **AI-Powered Documentation Search**: Semantic search over technical docs with hybrid retrieval
+- **Code Review Assistant**: Automated code analysis with security, performance, and style checks
+- **Customer Support Chatbot**: RAG-based Q&A with citation of knowledge base articles
+- **Content Analysis Pipeline**: Multi-agent workflows for analyzing articles, tutorials, and documentation
+- **Research Assistant**: Multi-query RAG with source tracking and synthesis
 
 **When to use this skill:**
 - Building chatbots, Q&A systems, or conversational interfaces
@@ -355,34 +362,58 @@ class AgentCommunicationBus {
 }
 ```
 
-### 6. Multi-Agent Synthesis & Aggregation (v1.1.0)
+### 6. Multi-Agent Synthesis & Aggregation
 
 When multiple specialized agents analyze content, synthesize their findings into coherent output.
 
-**Fan-Out/Fan-In Pattern:**
+**Real-World Example: Code Review Multi-Agent System**
+
 ```python
-async def multi_agent_analysis(content: str) -> AggregatedInsights:
-    """8-agent fan-out with synthesis aggregation."""
-    # Fan-out: Run agents in parallel
+async def multi_agent_code_review(code: str, language: str) -> ReviewReport:
+    """Multi-agent code analysis with synthesis."""
+    # Fan-out: Run specialized review agents in parallel
     agents = [
-        tech_comparator, security_auditor, implementation_planner,
-        integration_analyst, performance_analyst, code_quality_critic,
-        trend_validator, dependency_mapper
+        SecurityReviewAgent(),      # OWASP Top 10, injection risks
+        PerformanceAnalyzer(),      # Big-O complexity, database queries
+        StyleEnforcer(),             # PEP8, ESLint standards
+        TestCoverageChecker(),      # Missing test cases
+        DocumentationReviewer(),    # Docstrings, comments
+        DependencyAuditor()         # Outdated libs, CVEs
     ]
 
     findings = await asyncio.gather(
-        *[agent.analyze(content) for agent in agents],
+        *[agent.analyze(code, language) for agent in agents],
         return_exceptions=True  # Don't fail all if one fails
     )
 
     # Filter successful results with confidence scores
     valid_findings = [
         f for f in findings
-        if not isinstance(f, Exception) and f.confidence > 0.5
+        if not isinstance(f, Exception) and f.confidence > 0.6
     ]
 
-    # Fan-in: Synthesize into coherent artifact
-    return await synthesize_findings(valid_findings)
+    # Fan-in: Synthesize into coherent review report
+    return await synthesize_review_report(valid_findings)
+```
+
+**Real-World Example: E-commerce Product Categorization**
+
+```python
+async def categorize_product(product_data: dict) -> ProductCategories:
+    """Multi-agent product classification."""
+    agents = [
+        ImageClassifierAgent(),     # Visual category from image
+        TextAnalysisAgent(),        # Category from title/description
+        AttributeExtractor(),       # Structured attributes (color, size)
+        SimilarProductFinder(),     # Category from similar products
+    ]
+
+    classifications = await asyncio.gather(
+        *[agent.predict(product_data) for agent in agents]
+    )
+
+    # Resolve conflicts with weighted voting
+    return await weighted_category_vote(classifications)
 ```
 
 **Confidence Score Handling:**
@@ -401,8 +432,6 @@ def resolve_conflicts(findings: list[AgentFinding]) -> dict:
             reasoning=f"Confidence {winner.confidence:.2f} > others"
         )
 ```
-
-**Detailed Implementation:** See YG Starter's `synthesis.py` for production patterns.
 
 ### 7. Streaming Responses
 
@@ -644,7 +673,50 @@ jobs:
 - ❌ Don't use `keep_alive=-1` (keeps model forever, wastes memory)
 - ❌ Don't skip pre-warming in CI (cold start adds 30-60s)
 
-**Detailed Implementation:** See YG Starter's `backend/app/shared/services/llm/` for production patterns.
+**Production Implementation:**
+```python
+# app/services/llm_provider.py - Production-ready LLM factory
+from app.config import settings
+
+def get_llm_provider(task_type: str = "reasoning"):
+    """Get LLM provider based on environment configuration."""
+    if settings.OLLAMA_ENABLED:
+        return get_ollama_provider(task_type)
+    return get_cloud_provider(task_type)
+
+def get_ollama_provider(task_type: str):
+    """Configure Ollama for local inference."""
+    from langchain_ollama import ChatOllama
+
+    model_map = {
+        "reasoning": "deepseek-r1:70b",
+        "coding": "qwen2.5-coder:32b",
+        "general": "llama3.3:70b"
+    }
+
+    return ChatOllama(
+        model=model_map.get(task_type, "deepseek-r1:70b"),
+        base_url=settings.OLLAMA_HOST,
+        temperature=0.0,
+        num_ctx=32768,
+        keep_alive="5m"
+    )
+
+def get_cloud_provider(task_type: str):
+    """Configure cloud LLM provider."""
+    from langchain.chat_models import init_chat_model
+
+    model_map = {
+        "reasoning": "claude-opus-4-20250514",
+        "coding": "claude-sonnet-4-20250514",
+        "general": "gemini-2.0-flash-001"
+    }
+
+    return init_chat_model(
+        model_map.get(task_type, "claude-sonnet-4-20250514"),
+        temperature=0.0
+    )
+```
 
 ---
 

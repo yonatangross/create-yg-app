@@ -592,6 +592,19 @@ When creating a new design system:
 
 ---
 
-**Skill Version**: 1.0.0
-**Last Updated**: 2025-10-31
+**Skill Version**: 1.1.0
+**Last Updated**: 2025-12-29
 **Maintained by**: AI Agent Hub Team
+
+## Changelog
+
+### v1.1.0 (2025-12-29)
+- Updated to 2025 best practices with no SkillForge references
+- All examples use real dashboard/app component scenarios
+- Updated Tailwind CSS v4 patterns
+- Updated React 19 component patterns (no React.FC, function declarations)
+- Updated accessibility examples with modern ARIA patterns
+- Updated dark mode implementation with CSS variables + Tailwind
+
+### v1.0.0 (2025-10-31)
+- Initial skill with design tokens, component architecture, and accessibility

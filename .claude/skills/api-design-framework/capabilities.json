@@ -66,14 +66,14 @@
       "reference_file": "references/rest-patterns.md",
       "token_cost": 110
     },
-    "yg-starter-api": {
-      "keywords": ["yg-starter", "analysis api", "artifact api", "sse endpoint"],
+    "real-world-examples": {
+      "keywords": ["example", "production", "real api", "fastapi example"],
       "solves": [
-        "How does YG Starter API work?",
-        "YG Starter endpoint design decisions",
-        "Real-world API design examples"
+        "Show me real-world API examples",
+        "Production API design patterns",
+        "FastAPI implementation examples"
       ],
-      "example_file": "examples/yg-starter-api-design.md",
+      "example_file": "examples/example-api-design.md",
       "token_cost": 650
     },
     "authentication": {

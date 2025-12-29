@@ -71,15 +71,15 @@
       "reference_file": "SKILL.md#observability--monitoring",
       "token_cost": 180
     },
-    "yg-starter-examples": {
-      "keywords": ["yg-starter", "docker compose", "github actions", "alembic", "real world"],
+    "real-world-examples": {
+      "keywords": ["examples", "docker compose", "github actions", "alembic", "real world", "production"],
       "solves": [
-        "How does YG Starter set up CI/CD?",
-        "Real-world Docker Compose examples",
-        "Database migration patterns",
-        "Full CI/CD workflow implementation"
+        "How do I set up modern CI/CD in 2025?",
+        "Real-world Docker Compose examples for development",
+        "Database migration patterns with Alembic",
+        "Full CI/CD workflow implementation with GitHub Actions"
       ],
-      "reference_file": "SKILL.md#real-world-yg-starter-examples",
+      "reference_file": "SKILL.md#real-world-examples",
       "token_cost": 250
     }
   },

@@ -1,8 +1,8 @@
 ---
 name: llm-caching-patterns
-description: Multi-level caching strategies for LLM applications - semantic caching (Redis), prompt caching (Claude native), cache hierarchies, cost optimization, and Langfuse cost tracking with hierarchical trace rollup for 70-95% cost reduction
-version: 1.2.0
-author: YG Starter AI Agent Hub
+description: Multi-level caching strategies for LLM applications - semantic caching (Redis), prompt caching (Claude/OpenAI native), cache hierarchies, cost optimization, and Langfuse cost tracking with hierarchical trace rollup for 70-95% cost reduction
+version: 2.0.0
+author: YG Starter Template
 tags: [llm, caching, redis, cost-optimization, semantic-cache, prompt-cache, langfuse, trace-hierarchy, 2025]
 ---
 
@@ -10,7 +10,14 @@ tags: [llm, caching, redis, cost-optimization, semantic-cache, prompt-cache, lan
 
 ## Overview
 
-Modern LLM applications can reduce costs by 70-95% through intelligent multi-level caching. This skill covers the **double caching architecture** (2025 best practice): combining Redis semantic caching with provider-native prompt caching for maximum efficiency.
+Modern LLM applications can reduce costs by 70-95% through intelligent multi-level caching. This skill covers the **multi-tier caching architecture** (2025 best practice): combining in-memory LRU, Redis semantic caching, and provider-native prompt caching for maximum efficiency.
+
+**Real-World Use Cases:**
+- **High-Volume Chatbot**: Semantic cache for FAQ variations (80% cache hit rate)
+- **Code Review Automation**: Prompt cache for system instructions (90% savings)
+- **Content Moderation**: L1/L2 cache for repeat content detection
+- **Multi-Agent Analysis**: Hierarchical cache strategy across agents
+- **Customer Support**: Session-aware caching for context continuity
 
 **When to use this skill:**
 - High-volume LLM applications with repeated queries
@@ -590,25 +597,26 @@ async def call_llm_with_cache(
     return response.content
 ```
 
-#### Trace Hierarchy for Cost Attribution (YG Starter Pattern)
+#### Trace Hierarchy for Cost Attribution (Production Pattern)
 
 ```python
 from langfuse import Langfuse
 from langfuse.decorators import observe, langfuse_context
 from uuid import uuid4, UUID
 
-class AnalysisWorkflow:
-    """Multi-agent workflow with hierarchical cost tracking."""
+class CodeReviewWorkflow:
+    """Multi-agent code review with hierarchical cost tracking."""
 
     @observe(as_type="trace")
-    async def run_analysis(self, url: str, analysis_id: UUID) -> dict:
+    async def run_code_review(self, pr_id: int, diff: str, review_id: UUID) -> dict:
         """Parent trace - aggregates all child agent costs.
 
         Trace Hierarchy:
-        run_analysis (trace)
-        ├── tech_comparator_generation (generation)
-        ├── security_auditor_generation (generation)
-        ├── implementation_planner_generation (generation)
+        run_code_review (trace)
+        ├── security_scan_generation (generation)
+        ├── performance_analysis_generation (generation)
+        ├── style_check_generation (generation)
+        ├── test_coverage_generation (generation)
         └── synthesis_generation (generation)
 
         Langfuse automatically rolls up costs to parent trace.
@@ -616,41 +624,43 @@ class AnalysisWorkflow:
 
         # Set trace metadata for filtering/grouping
         langfuse_context.update_current_trace(
-            name="content_analysis",
-            session_id=str(analysis_id),
-            user_id=url,  # Group by URL for deduplication analysis
-            tags=["multi-agent", "production"],
+            name="code_review",
+            session_id=str(review_id),
+            user_id=f"pr_{pr_id}",  # Group by PR for analysis
+            tags=["multi-agent", "production", "code-review"],
             metadata={
-                "analysis_id": str(analysis_id),
-                "url": url,
-                "agent_count": 8
+                "review_id": str(review_id),
+                "pr_id": pr_id,
+                "agent_count": 5,
+                "diff_size": len(diff)
             }
         )
 
-        # Each agent call creates a child generation
+        # Each review agent creates a child generation
         findings = {}
-        for agent in self.agents:
+        for agent in self.review_agents:
             # Child generation auto-linked to parent trace
-            result = await self.run_agent(
+            result = await self.run_review_agent(
                 agent=agent,
-                content=content,
-                analysis_id=analysis_id  # Links to parent
+                code_diff=diff,
+                review_id=review_id  # Links to parent
             )
             findings[agent.name] = result
 
         # Synthesis also tracked as child generation
-        synthesis = await self.synthesize_findings(
+        synthesis = await self.synthesize_review(
             findings=findings,
-            analysis_id=analysis_id
+            review_id=review_id
         )
 
         # Langfuse dashboard shows:
-        # - Total cost for this trace (sum of all child generations)
-        # - Token breakdown by agent type
+        # - Total cost for this review (sum of all child generations)
+        # - Token breakdown by review agent type
         # - Cache hit rate per agent
         # - Latency per agent
+        # - Quality score trends
 
-        return {"findings": findings, "synthesis": synthesis}
+        return {"findings": findings, "synthesis": synthesis, "approved": synthesis.approved}
 
     @observe(as_type="generation")
     async def run_agent(
@@ -946,13 +956,13 @@ See:
 - `references/cost-optimization.md` - ROI calculations and benchmarks
 - `templates/semantic-cache-service.py` - Production-ready service
 - `templates/prompt-cache-wrapper.py` - Claude caching wrapper
-- `examples/yg-starter-integration.md` - YG Starter specific patterns
+- `examples/project-integration.md` - this project specific patterns
 
 ---
 
 **Skill Version**: 1.3.0
 **Last Updated**: 2025-12-28
-**Maintained by**: YG Starter AI Agent Hub
+**Maintained by**: this project AI Agent Hub
 
 ## Changelog
 
@@ -969,7 +979,7 @@ See:
 - Added cost rollup query patterns with Langfuse API
 - Added daily cost breakdown by agent type example
 - Updated automatic cost tracking with custom trace ID support
-- Added YG Starter-specific multi-agent workflow cost tracking pattern
+- Added this project-specific multi-agent workflow cost tracking pattern
 
 ### v1.1.0 (2025-12-27)
 - Added comprehensive Langfuse cost tracking section

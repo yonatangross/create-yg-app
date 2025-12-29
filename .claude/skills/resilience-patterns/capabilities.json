@@ -59,14 +59,14 @@
       "related_capabilities": ["retry-strategies"]
     },
     {
-      "id": "yg-starter-integration",
-      "keywords": ["YG Starter", "workflow", "agent", "LangGraph", "multi-agent"],
+      "id": "project-integration",
+      "keywords": ["production systems", "workflow", "agent", "LangGraph", "multi-agent"],
       "problems_solved": [
-        "Wire resilience patterns into YG Starter workflows",
+        "Wire resilience patterns into production systems workflows",
         "Configure per-agent circuit breakers and bulkheads",
         "Add observability to resilience events"
       ],
-      "files": ["examples/yg-starter-workflow-resilience.md"],
+      "files": ["examples/project-workflow-resilience.md"],
       "related_capabilities": ["circuit-breaker", "bulkhead", "llm-resilience"]
     }
   ],

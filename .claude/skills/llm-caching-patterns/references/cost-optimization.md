@@ -3,7 +3,7 @@
 ## Baseline: No Caching
 
 ```
-YG Starter Production Load (estimated):
+this project Production Load (estimated):
 ──────────────────────────────────────
 • 1,000 analyses/day
 • 8 agents × 2,000 tokens avg = 16,000 input tokens/analysis

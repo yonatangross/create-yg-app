@@ -1,12 +1,12 @@
 {
-  "_comment": "YG Starter GitHub Project v2 Configuration - Use these IDs with gh project commands",
+  "_comment": "this project GitHub Project v2 Configuration - Use these IDs with gh project commands",
 
   "project": {
     "number": 1,
     "owner": "yonatangross",
     "id": "PVT_kwHOAS8tks4BIL_t",
     "title": "Reporter Accuracy - Sprint Board",
-    "repo": "ArieGoldkin/YG Starter"
+    "repo": "ArieGoldkin/this project"
   },
 
   "fields": {

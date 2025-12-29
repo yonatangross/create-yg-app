@@ -1,4 +1,4 @@
-# Code Quality Rules - YG Starter Frontend
+# Code Quality Rules - this project Frontend
 
 **Version:** 1.0
 **Enforcement:** Pre-commit hooks (errors block commits)

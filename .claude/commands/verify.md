@@ -108,12 +108,12 @@ Task(
   - API design conventions
 
   RUN AND REPORT:
-  - poetry run ruff format --check app/
-  - poetry run ruff check app/
-  - poetry run ty check app/ --exclude "app/evaluation/*"
+  - uv run ruff format --check app/
+  - uv run ruff check app/
+  - uv run ty check app/ --exclude "app/evaluation/*"
 
   ANALYZE TEST COVERAGE:
-  - poetry run pytest tests/unit/ --cov=app --cov-report=term-missing
+  - uv run pytest tests/unit/ --cov=app --cov-report=term-missing
 
   Report findings with conventional comments format.""",
   run_in_background=true
@@ -196,7 +196,7 @@ Wait for all three to complete, then collect results.
 ```bash
 # Backend - with coverage enforcement
 cd backend
-poetry run pytest tests/unit/ -v --tb=short \
+uv run pytest tests/unit/ -v --tb=short \
   --cov=app --cov-report=term-missing \
   --cov-fail-under=80 \
   2>&1 | tee /tmp/backend_test_results.log

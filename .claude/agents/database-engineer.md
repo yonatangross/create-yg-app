@@ -95,7 +95,7 @@ Return structured findings:
 
 **pgvector Configuration:**
 ```sql
--- HNSW (recommended for YG Starter scale)
+-- HNSW (recommended for this project scale)
 CREATE INDEX idx_chunks_embedding_hnsw ON chunks
 USING hnsw (embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);

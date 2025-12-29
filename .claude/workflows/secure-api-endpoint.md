@@ -191,7 +191,7 @@ After completion, trigger:
 | Tool | Purpose |
 |------|---------|
 | `context7` | Fetch current FastAPI/Express docs |
-| `yg-starter-postgres-dev` | Test database queries |
+| `postgres-mcp` | Test database queries |
 | `playwright` | E2E test if endpoint has UI |
 
 ---

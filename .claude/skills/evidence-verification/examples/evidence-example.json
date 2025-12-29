@@ -1,99 +1,72 @@
 {
-  "task_id": "feature-user-authentication",
-  "task_description": "Implement user authentication with JWT tokens",
-  "agent": "Backend System Architect",
-  "timestamp": "2025-11-02T14:30:22Z",
-  "evidence": {
+  "quality_evidence": {
+    "linter": {
+      "tool": "ruff",
+      "version": "0.8.4",
+      "exit_code": 0,
+      "command": "ruff check app/",
+      "stdout": "All checks passed!",
+      "stderr": "",
+      "timestamp": "2025-12-29T10:15:30Z"
+    },
+    "type_checker": {
+      "tool": "ty",
+      "version": "0.2.0",
+      "exit_code": 0,
+      "command": "ty check app/",
+      "stdout": "✓ Type checking complete (147 files checked)",
+      "stderr": "",
+      "timestamp": "2025-12-29T10:15:35Z"
+    },
     "tests": {
-      "executed": true,
-      "command": "npm test -- --coverage",
+      "tool": "pytest",
+      "version": "8.3.4",
       "exit_code": 0,
-      "duration_seconds": 12.4,
-      "results": {
-        "passed": 24,
-        "failed": 0,
-        "skipped": 1,
-        "total": 25
-      },
-      "coverage": {
-        "statements": 88.2,
-        "branches": 82.4,
-        "functions": 91.7,
-        "lines": 87.9,
-        "overall": 87.5
-      },
-      "output_snippet": "Test Suites: 5 passed, 5 total\nTests: 24 passed, 1 skipped, 25 total\nTime: 12.438 s",
-      "evidence_file": ".claude/quality-gates/evidence/tests-2025-11-02-143022.log"
+      "command": "pytest tests/unit/ --cov=app",
+      "stdout": "=================== test session starts ====================\nplatform darwin -- Python 3.12.0, pytest-8.3.4\ncollected 147 items\n\ntests/unit/api/test_users.py ................... [ 12%]\ntests/unit/services/test_auth.py ............... [ 24%]\ntests/unit/services/test_payment.py ............ [ 36%]\n...\n=================== 147 passed in 12.34s ===================\n\nCoverage report:\nName                      Stmts   Miss  Cover\n---------------------------------------------\napp/__init__.py               4      0   100%\napp/api/v1/users.py          45      2    96%\napp/services/auth.py         67      5    93%\napp/services/payment.py      89      3    97%\n---------------------------------------------\nTOTAL                      1247     82    93%\n",
+      "stderr": "",
+      "coverage_percent": 93.4,
+      "tests_passed": 147,
+      "tests_failed": 0,
+      "timestamp": "2025-12-29T10:16:00Z"
     },
-    "build": {
-      "executed": true,
-      "command": "npm run build",
+    "security_scan": {
+      "tool": "pip-audit",
+      "version": "2.7.3",
       "exit_code": 0,
-      "duration_seconds": 24.3,
-      "errors": 0,
-      "warnings": 2,
-      "artifacts": [
-        {
-          "file": "dist/index.html",
-          "size_kb": 1.2
-        },
-        {
-          "file": "dist/assets/main-abc123.js",
-          "size_kb": 245.1
-        },
-        {
-          "file": "dist/assets/vendor-def456.js",
-          "size_kb": 512.3
-        }
-      ],
-      "total_size_mb": 2.6,
-      "output_snippet": "vite v5.0.0 building for production...\n✓ 247 modules transformed.\n✓ built in 24.32s",
-      "evidence_file": ".claude/quality-gates/evidence/build-2025-11-02-143022.log"
-    },
-    "code_quality": {
-      "linter": {
-        "executed": true,
-        "tool": "ESLint",
-        "command": "npm run lint",
-        "exit_code": 0,
-        "errors": 0,
-        "warnings": 3,
-        "warnings_safe_to_ignore": true
-      },
-      "type_checker": {
-        "executed": true,
-        "tool": "TypeScript",
-        "command": "npm run typecheck",
-        "exit_code": 0,
-        "errors": 0
-      },
-      "security_scan": {
-        "executed": true,
-        "tool": "npm audit",
+      "command": "pip-audit",
+      "vulnerabilities": {
         "critical": 0,
         "high": 0,
-        "moderate": 1,
-        "low": 2,
-        "safe_to_deploy": true
-      }
+        "moderate": 0,
+        "low": 1
+      },
+      "details": [
+        {
+          "name": "requests",
+          "version": "2.31.0",
+          "vulnerability": "CVE-2024-12345",
+          "severity": "low",
+          "description": "Minor TLS validation issue",
+          "fixed_version": "2.32.0"
+        }
+      ],
+      "timestamp": "2025-12-29T10:16:30Z"
     },
-    "deployment": {
-      "executed": false,
-      "reason": "Not yet deployed - awaiting code review"
+    "build": {
+      "tool": "npm",
+      "exit_code": 0,
+      "command": "npm run build",
+      "stdout": "vite v5.4.11 building for production...\n✓ 127 modules transformed.\ndist/index.html                   0.45 kB │ gzip:  0.29 kB\ndist/assets/index-a1b2c3d4.css    12.34 kB │ gzip:  3.45 kB\ndist/assets/index-e5f6g7h8.js    187.92 kB │ gzip: 61.23 kB\n✓ built in 3.21s",
+      "stderr": "",
+      "bundle_size_kb": 187.92,
+      "timestamp": "2025-12-29T10:17:00Z"
     }
   },
-  "quality_standard_met": "production-grade",
-  "quality_checks": {
-    "tests_pass": true,
-    "coverage_above_70": true,
-    "build_succeeds": true,
-    "no_critical_linter_errors": true,
-    "type_checker_passes": true
-  },
-  "conclusion": "All verification checks passed. Task ready for code review and deployment.",
-  "next_steps": [
-    "Code review by Frontend UI Developer",
-    "Integration testing",
-    "Staging deployment"
+  "approval_status": "approved",
+  "approval_reason": "All quality gates passed: linter (exit 0), type_checker (exit 0), tests (93.4% coverage, 147 passed), security_scan (0 critical/high), build (success)",
+  "blocker_count": 0,
+  "warnings": [
+    "Low severity vulnerability in requests package - recommend upgrading to 2.32.0"
   ]
 }

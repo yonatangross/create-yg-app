@@ -1,8 +1,8 @@
-# YG Starter Integration Example
+# this project Integration Example
 
-## Integrating LLM Caching into YG Starter
+## Integrating LLM Caching into this project
 
-This example shows how to integrate multi-level caching into YG Starter's analysis workflow.
+This example shows how to integrate multi-level caching into this project's analysis workflow.
 
 ## Current Architecture (Before Caching)
 
@@ -39,7 +39,7 @@ cachetools = "^5.3.0"
 ```
 
 ```bash
-poetry install
+uv sync
 ```
 
 ## Step 2: Update Docker Compose
@@ -49,7 +49,7 @@ poetry install
 services:
   redis:
     image: redis/redis-stack:latest
-    container_name: yg-starter-redis-cache
+    container_name: project-redis-cache
     ports:
       - "6379:6379"      # Redis
       - "8001:8001"      # RedisInsight
@@ -58,7 +58,7 @@ services:
     volumes:
       - redis-cache-data:/data
     networks:
-      - yg-starter-network
+      - project-network
 
 volumes:
   redis-cache-data:
@@ -130,7 +130,7 @@ async def execute_agent_with_cache(
 
 ```python
 # backend/scripts/warm_cache_from_golden.py
-async def warm_yg-starter_cache():
+async def warm_project_cache():
     """Warm cache with 98 golden analyses."""
 
     from app.db.repositories.analysis_repository import AnalysisRepository
@@ -165,7 +165,7 @@ async def warm_yg-starter_cache():
     print(f"✅ Warmed cache with {warmed} entries from golden dataset")
 
 # Run it
-asyncio.run(warm_yg-starter_cache())
+asyncio.run(warm_project_cache())
 ```
 
 ## Step 6: Add Cache Metrics Endpoint
@@ -194,8 +194,8 @@ async def cache_health_check():
 @router.post("/warm")
 async def warm_cache():
     """Warm cache from golden dataset (admin only)."""
-    from scripts.warm_cache_from_golden import warm_yg-starter_cache
-    count = await warm_yg-starter_cache()
+    from scripts.warm_cache_from_golden import warm_project_cache
+    count = await warm_project_cache()
     return {"warmed_entries": count}
 ```
 
@@ -240,7 +240,7 @@ export function CacheIndicator({ cacheLayer, costSaved }: CacheIndicatorProps) {
 from prometheus_client import Gauge
 
 cache_hit_rate = Gauge(
-    "yg-starter_cache_hit_rate",
+    "project_cache_hit_rate",
     "Cache hit rate percentage",
     ["layer"]
 )
@@ -292,19 +292,19 @@ Month 1 avg hit rate: 75%
 
 ## Monitoring Dashboard
 
-Grafana panel for YG Starter cache performance:
+Grafana panel for this project cache performance:
 
 ```promql
 # Combined cache hit rate
-sum(rate(cache_hits_total{job="yg-starter-backend"}[5m]))
+sum(rate(cache_hits_total{job="project-backend"}[5m]))
 /
 (
-  sum(rate(cache_hits_total{job="yg-starter-backend"}[5m])) +
-  sum(rate(cache_misses_total{job="yg-starter-backend"}[5m]))
+  sum(rate(cache_hits_total{job="project-backend"}[5m])) +
+  sum(rate(cache_misses_total{job="project-backend"}[5m]))
 )
 
 # Cost saved per hour
-sum(rate(llm_cost_saved_usd_total{job="yg-starter-backend"}[1h])) * 3600
+sum(rate(llm_cost_saved_usd_total{job="project-backend"}[1h])) * 3600
 ```
 
 ## Testing
@@ -316,9 +316,9 @@ import pytest
 @pytest.mark.asyncio
 async def test_cache_warm_from_golden():
     """Test cache warming from golden dataset."""
-    from scripts.warm_cache_from_golden import warm_yg-starter_cache
+    from scripts.warm_cache_from_golden import warm_project_cache
 
-    count = await warm_yg-starter_cache()
+    count = await warm_project_cache()
 
     assert count >= 415  # 98 analyses × ~8 agents
     assert await semantic_cache.get_size() >= 415

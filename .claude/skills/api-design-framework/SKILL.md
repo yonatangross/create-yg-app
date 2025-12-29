@@ -150,8 +150,8 @@ Content-Type: application/json
   "email": "jane@example.com",
   "name": "Jane Smith",
   "role": "developer",
-  "created_at": "2025-10-31T10:30:00Z",
-  "updated_at": "2025-10-31T10:30:00Z"
+  "created_at": "December 2025T10:30:00Z",
+  "updated_at": "December 2025T10:30:00Z"
 }
 ```
 
@@ -176,7 +176,7 @@ Content-Type: application/json
         "code": "NAME_TOO_SHORT"
       }
     ],
-    "timestamp": "2025-10-31T10:30:00Z",
+    "timestamp": "December 2025T10:30:00Z",
     "request_id": "req_abc123"
   }
 }
@@ -619,7 +619,7 @@ X-Webhook-Signature: sha256=abc123...
 {
   "event": "user.created",
   "data": { ... },
-  "timestamp": "2025-10-31T10:30:00Z"
+  "timestamp": "December 2025T10:30:00Z"
 }
 ```
 
@@ -899,12 +899,12 @@ export function useCreateUser() {
 ---
 
 **Skill Version**: 1.1.0
-**Last Updated**: 2025-12-29
-**Maintained by**: AI Agent Hub Team
+**Last Updated**: December 2025
+**Maintained by**: YG Starter Team
 
 ## Changelog
 
-### v1.1.0 (2025-12-29)
+### v1.1.0 (December 2025)
 - Added Frontend API Integration (2025 Patterns) section
 - Added Zod runtime validation patterns for API responses
 - Added request interceptors with ky (auth, retry, error enrichment)

@@ -1,8 +1,8 @@
-# YG Starter GitHub CLI Workflow
+# this project GitHub CLI Workflow
 
 ## Overview
 
-YG Starter uses `gh` (GitHub CLI) for all GitHub operations including PR creation, issue management, and project board updates. This ensures consistency, automation, and audit trails.
+this project uses `gh` (GitHub CLI) for all GitHub operations including PR creation, issue management, and project board updates. This ensures consistency, automation, and audit trails.
 
 **Key Principles:**
 - NEVER commit directly to `dev` or `main` - always use feature branches
@@ -88,7 +88,7 @@ git checkout -b feature/llm-caching-patterns
 
 ### Conventional Commits
 
-YG Starter uses [Conventional Commits](https://www.conventionalcommits.org/) for changelog generation:
+this project uses [Conventional Commits](https://www.conventionalcommits.org/) for changelog generation:
 
 ```bash
 # Format
@@ -143,9 +143,9 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```bash
 # Backend
 cd backend
-poetry run ruff format --check app/
-poetry run ruff check app/
-poetry run ty check app/ --exclude "app/evaluation/*"
+uv run ruff format --check app/
+uv run ruff check app/
+uv run ty check app/ --exclude "app/evaluation/*"
 
 # Frontend
 cd frontend
@@ -320,7 +320,7 @@ gh issue reopen 273
 
 ## Project Board Management
 
-YG Starter uses GitHub Projects for sprint tracking.
+this project uses GitHub Projects for sprint tracking.
 
 ### View Project Board
 
@@ -336,10 +336,10 @@ gh project view <PROJECT_NUMBER> --web
 
 ```bash
 # Add issue to project board
-gh issue edit 273 --add-project "YG Starter Sprint 1"
+gh issue edit 273 --add-project "this project Sprint 1"
 
 # Add PR to project board
-gh pr edit 280 --add-project "YG Starter Sprint 1"
+gh pr edit 280 --add-project "this project Sprint 1"
 ```
 
 ### Update Issue Status
@@ -457,10 +457,10 @@ git checkout -b issue/285-llm-semantic-caching
 
 # 4. Run pre-commit checks
 cd backend
-poetry run ruff format --check app/
-poetry run ruff check app/
-poetry run ty check app/ --exclude "app/evaluation/*"
-poetry run pytest tests/unit/ -v
+uv run ruff format --check app/
+uv run ruff check app/
+uv run ty check app/ --exclude "app/evaluation/*"
+uv run pytest tests/unit/ -v
 
 cd ../frontend
 npm run lint
@@ -524,7 +524,7 @@ git checkout -b fix/critical-sse-crash
 
 # 3. Test thoroughly
 cd backend
-poetry run pytest tests/unit/ tests/integration/ -v
+uv run pytest tests/unit/ tests/integration/ -v
 
 # 4. Commit and push
 git add .
@@ -628,7 +628,7 @@ Closes #
 ```yaml
 # .github/ISSUE_TEMPLATE/bug_report.yml
 name: Bug Report
-description: Report a bug in YG Starter
+description: Report a bug in this project
 labels: ["bug"]
 body:
   - type: markdown
@@ -777,6 +777,6 @@ gh pr list --state merged --json number,headRefName --jq '.[] | .headRefName' | 
 
 - **GitHub CLI Docs:** https://cli.github.com/manual/
 - **Conventional Commits:** https://www.conventionalcommits.org/
-- **YG Starter Branch Strategy:** See `CLAUDE.md`
+- **this project Branch Strategy:** See `CLAUDE.md`
 - **PR Template:** `.github/pull_request_template.md`
 - **Issue Templates:** `.github/ISSUE_TEMPLATE/`

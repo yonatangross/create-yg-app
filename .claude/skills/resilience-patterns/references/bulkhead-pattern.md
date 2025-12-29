@@ -75,7 +75,7 @@ Group operations by criticality.
 └────────────────────────────────────────────────────────────┘
 ```
 
-## Configuration for YG Starter
+## Configuration for production applications
 
 ### Agent Tier Assignment
 

@@ -66,23 +66,23 @@ jobs:
 
       - name: Install dependencies
         working-directory: backend
-        run: poetry install --no-interaction
+        run: uv sync --no-interaction
 
       - name: Lint
         working-directory: backend
         run: |
-          poetry run ruff format --check app/
-          poetry run ruff check app/
+          uv run ruff format --check app/
+          uv run ruff check app/
 
       - name: Type check
         working-directory: backend
-        run: poetry run mypy app/ --ignore-missing-imports
+        run: uv run mypy app/ --ignore-missing-imports
 
       - name: Test
         working-directory: backend
         env:
           DATABASE_URL: postgresql://postgres:test@localhost:5432/test
-        run: poetry run pytest --cov=app --cov-report=xml -v
+        run: uv run pytest --cov=app --cov-report=xml -v
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4

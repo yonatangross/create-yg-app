@@ -1,8 +1,8 @@
-# YG Starter Content Analysis Workflow
+# this project Content Analysis Workflow
 
 ## Overview
 
-YG Starter's content analysis workflow is a production LangGraph pipeline that coordinates 8 specialist agents to analyze technical content (URLs, documents, repositories).
+this project's content analysis workflow is a production LangGraph pipeline that coordinates 8 specialist agents to analyze technical content (URLs, documents, repositories).
 
 **Architecture:**
 ```
@@ -606,6 +606,6 @@ def agent_with_compression(state):
 
 ## References
 
-- YG Starter Backend: `backend/app/workflows/`
+- this project Backend: `backend/app/workflows/`
 - LangGraph Docs: [Multi-Agent Systems](https://langchain-ai.github.io/langgraph/tutorials/multi_agent/)
 - Langfuse Docs: [LangGraph Integration](https://langfuse.com/docs/integrations/langgraph)

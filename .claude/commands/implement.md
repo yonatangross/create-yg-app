@@ -371,9 +371,9 @@ Task(
   - All imports resolved
 
   Run:
-  - poetry run alembic upgrade head (dry-run)
-  - poetry run ruff check app/
-  - poetry run ty check app/""",
+  - uv run alembic upgrade head (dry-run)
+  - uv run ruff check app/
+  - uv run ty check app/""",
   run_in_background=true
 )
 
@@ -401,7 +401,7 @@ Task(
   Run all tests with coverage:
 
   Backend:
-  - cd backend && poetry run pytest tests/unit/ -v --cov=app --cov-report=term-missing
+  - cd backend && uv run pytest tests/unit/ -v --cov=app --cov-report=term-missing
 
   Frontend:
   - cd frontend && npm test -- --coverage

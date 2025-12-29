@@ -144,9 +144,9 @@ async def get_llm_response_with_double_caching(query: str, agent_type: str):
     return response  # 90% cost savings (prompt cache)
 ```
 
-## YG Starter Prompt Resolution (Issue #414)
+## this project Prompt Resolution (Issue #414)
 
-YG Starter's PromptManager provides 4-level prompt caching:
+this project's PromptManager provides 4-level prompt caching:
 
 ```
 L1 → In-Memory LRU (5min TTL)     # Fastest

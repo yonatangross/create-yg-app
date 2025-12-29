@@ -1,8 +1,8 @@
-# YG Starter Quality Gates - Real Implementation
+# this project Quality Gates - Real Implementation
 
 ## Overview
 
-YG Starter uses quality gates in its LangGraph content analysis pipeline to ensure AI-generated summaries meet production standards before compression and storage.
+this project uses quality gates in its LangGraph content analysis pipeline to ensure AI-generated summaries meet production standards before compression and storage.
 
 **Location**: `backend/app/workflows/nodes/quality_gate_node.py`
 
@@ -74,4 +74,4 @@ See full implementation in backend/app/workflows/nodes/quality_gate_node.py
 
 ---
 
-**Key Takeaway**: Quality gates in YG Starter prevent 15%+ of low-quality analysis from reaching users, with only 3.4% requiring human escalation.
+**Key Takeaway**: Quality gates in this project prevent 15%+ of low-quality analysis from reaching users, with only 3.4% requiring human escalation.

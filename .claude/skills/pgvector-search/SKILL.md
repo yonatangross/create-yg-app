@@ -1,18 +1,25 @@
 ---
 name: pgvector-search
-description: Production hybrid search with PGVector + BM25 using Reciprocal Rank Fusion, metadata filtering, and performance optimization for semantic retrieval
-version: 1.0.0
-author: YG Starter AI Agent Hub
+description: Production hybrid search with PGVector 0.7+ and BM25 using Reciprocal Rank Fusion, metadata filtering, and HNSW indexing for semantic retrieval
+version: 2.0.0
+author: YG Starter Template
 tags: [pgvector, hybrid-search, bm25, rrf, semantic-search, retrieval, 2025]
 ---
 
 # PGVector Hybrid Search
 
-**Production-grade semantic + keyword search using PostgreSQL**
+**Production-grade semantic + keyword search using PostgreSQL 16+ and PGVector 0.7+**
 
 ## Overview
 
 Hybrid search combines **semantic similarity** (vector embeddings) with **keyword matching** (BM25) to achieve better retrieval than either alone.
+
+**Real-World Use Cases:**
+- **Technical Documentation Search**: Hybrid retrieval over API docs, tutorials, guides
+- **Code Search Engine**: Find similar functions/classes across repositories
+- **E-commerce Product Discovery**: Search by image + text attributes
+- **Legal Document Retrieval**: Citation-aware semantic search
+- **Medical Literature Search**: Semantic search over research papers with MeSH terms
 
 **Architecture:**
 ```
@@ -119,7 +126,7 @@ def rrf_score(rank: int, k: int = 60) -> float:
 
 ---
 
-## YG Starter's Hybrid Search Implementation
+## this project's Hybrid Search Implementation
 
 ### Database Schema
 
@@ -320,7 +327,7 @@ CREATE INDEX idx_embedding ON chunks
 - **Much faster queries** (10-100x)
 - Scales to millions of vectors
 
-**YG Starter uses HNSW (415 chunks, room to scale to 10M+).**
+**this project uses HNSW (415 chunks, room to scale to 10M+).**
 
 **Detailed Comparison:** See `references/indexing-strategies.md`
 
@@ -346,7 +353,7 @@ if is_technical_query(query) and chunk.content_type == "code_block":
     rrf_score *= 1.2
 ```
 
-**YG Starter Evaluation:**
+**this project Evaluation:**
 - **Before boosting:** 91.1% pass rate, 0.647 MRR (Hard queries)
 - **After boosting:** 91.6% pass rate, 0.686 MRR (Hard queries)
 - **Improvement:** +0.5% pass rate, +6% MRR
@@ -453,7 +460,7 @@ async def test_hybrid_search_golden_dataset():
 - [PGVector GitHub](https://github.com/pgvector/pgvector)
 - [HNSW Index Guide](https://github.com/pgvector/pgvector#hnsw)
 
-### YG Starter Implementation
+### this project Implementation
 - `backend/app/db/repositories/chunk_repository.py` - Hybrid search implementation
 - `backend/app/shared/services/search/search_service.py` - Search service layer
 - `backend/app/core/constants.py` - Search constants (fetch multiplier, boosting factors)
@@ -466,4 +473,4 @@ async def test_hybrid_search_golden_dataset():
 ---
 
 **Version:** 1.0.0 (December 2025)
-**Status:** Production-ready patterns from YG Starter's 415-chunk golden dataset
+**Status:** Production-ready patterns from this project's 415-chunk golden dataset

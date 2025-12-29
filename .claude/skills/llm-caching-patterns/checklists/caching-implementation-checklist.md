@@ -489,7 +489,7 @@ async def test_cache_latency():
 | Cache not persisting | Enable Redis AOF/RDB, check disk space |
 | Prompt cache not working | Verify content > 1024 tokens, check API response headers |
 
-## YG Starter Integration
+## this project Integration
 
 ```python
 # Example: Multi-level caching for content analysis

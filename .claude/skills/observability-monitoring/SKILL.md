@@ -433,7 +433,7 @@ sampler = TraceIdRatioBased(0.1)
 - Keep slow traces (p95+ latency)
 - Sample 1% of successful fast traces
 
-**YG Starter sampling:**
+**this project sampling:**
 - Development: 100% sampling
 - Production: 10% sampling, 100% for errors
 
@@ -601,11 +601,11 @@ sum(rate(http_request_duration_seconds_count[30d]))
 
 ---
 
-## Real-World YG Starter Examples
+## Real-World Examples
 
-### Example 1: Langfuse Observability Integration
+### Example 1: LLM Observability with Langfuse
 
-**YG Starter uses Langfuse for LLM observability:**
+**AI application using Langfuse for LLM observability:**
 ```python
 from langfuse import Langfuse
 from langfuse.decorators import observe, langfuse_context
@@ -661,9 +661,9 @@ async def analyze_content(url: str) -> AnalysisResult:
 - Prompt/completion inspection
 - Latency breakdown
 
-### Example 2: Structured Logging with Correlation
+### Example 2: Structured Logging with Correlation IDs
 
-**YG Starter's actual logging setup:**
+**FastAPI application with structlog:**
 ```python
 import structlog
 from structlog.processors import JSONRenderer, TimeStamper, add_log_level
@@ -724,9 +724,9 @@ async def supervisor_node(state: AnalysisState):
 }
 ```
 
-### Example 3: LLM Cost Tracking
+### Example 3: LLM Cost Tracking with Prometheus
 
-**YG Starter tracks LLM costs per model and operation:**
+**AI application tracking LLM costs per model and operation:**
 ```python
 from prometheus_client import Counter, Histogram
 
@@ -808,10 +808,11 @@ sum(increase(llm_cost_dollars_total[1h])) by (operation)
 histogram_quantile(0.95, rate(llm_request_duration_seconds_bucket[5m]))
 ```
 
-**YG Starter cost insights:**
+**Example cost insights from production AI app:**
 - Baseline: $35k/year → With caching: $2-5k/year (85-95% reduction)
-- Most expensive operation: `quality_assessment` (40% of tokens)
-- Highest cache hit rate: `tech_comparison` (92%)
+- Most expensive operation: `content_analysis` (40% of tokens)
+- Highest cache hit rate: `similar_queries` (92%)
+- Cache strategies: L1 (Prompt Cache) 90% hit rate, L2 (Semantic Cache) 75% hit rate
 
 ---
 

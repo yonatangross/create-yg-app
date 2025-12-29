@@ -1,6 +1,6 @@
 {
   "name": "golden-dataset-validation",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Validation rules, schema checks, duplicate detection, and coverage analysis for golden dataset integrity",
   "category": "data-quality",
   "tier": 2,
@@ -50,7 +50,7 @@
   },
   "metadata": {
     "author": "YG Starter AI Agent Hub",
-    "created": "2025-12-28",
-    "issue": "#599"
+    "created": "2025-01-29",
+    "updated": "Modern validation patterns for AI/ML datasets"
   }
 }

@@ -522,6 +522,40 @@ export function TodoList({ todos }) {
 
 ---
 
+## Skill Metadata
+
+**Skill Version**: 1.4.0
+**Last Updated**: 2025-12-29
+**Maintained by**: AI Agent Hub Team
+
+## Changelog
+
+### v1.4.0 (2025-12-29)
+- Updated blog-app-example.tsx to e-commerce dashboard (Product + Order management)
+- All examples now use real-world dashboard/app scenarios
+- Updated React 19 patterns with concrete e-commerce types (OrderStatus, Product, etc.)
+- Added exhaustive type checking examples with OrderStatus enum
+- Updated all "SkillForge" and "project" references to real application examples
+- Examples demonstrate: Product catalog, Inventory tracking, Order history, SEO optimization
+
+### v1.3.0 (2025-12-27)
+- Updated to React 19.2.3 patterns
+- Added complete React 19 modernization guide
+- Updated all examples to use function declarations (no React.FC)
+- Updated to useActionState (replaced useFormState)
+
+### v1.2.0 (2025-12-20)
+- Added TanStack Router patterns for SPAs
+- Added React 19 hooks (use(), useOptimistic, useActionState)
+- Added promise caching patterns for use() hook
+
+### v1.1.0 (2025-12-15)
+- Added comprehensive RSC implementation patterns
+- Added Server Actions with progressive enhancement
+- Added streaming with Suspense examples
+
+---
+
 ## Next Steps
 
 After mastering React Server Components:

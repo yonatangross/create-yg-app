@@ -62,7 +62,7 @@
       "handoff_to": ["code-quality-reviewer", "frontend-ui-developer"],
       "mcp_tools": {
         "documentation": ["context7"],
-        "testing": ["yg-starter-postgres-dev"],
+        "testing": ["postgres-mcp"],
         "discovery": ["mcp-find"]
       }
     },
@@ -1251,8 +1251,8 @@
     ],
     "on_demand": {
       "testing": ["playwright"],
-      "database": ["yg-starter-postgres-dev"],
-      "observability": ["yg-starter-langfuse"],
+      "database": ["postgres-mcp"],
+      "observability": ["langfuse"],
       "docker": ["MCP_DOCKER"]
     },
     "discovery_tool": "mcp__MCP_DOCKER__mcp-find",

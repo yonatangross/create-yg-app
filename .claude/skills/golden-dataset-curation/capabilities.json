@@ -1,6 +1,6 @@
 {
   "name": "golden-dataset-curation",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Quality criteria, workflows, and multi-agent analysis patterns for curating high-quality golden dataset entries",
   "category": "data-quality",
   "tier": 2,
@@ -59,7 +59,7 @@
   ],
   "metadata": {
     "author": "YG Starter AI Agent Hub",
-    "created": "2025-12-28",
-    "issue": "#599"
+    "created": "2025-01-29",
+    "updated": "Modern AI/ML dataset curation patterns"
   }
 }

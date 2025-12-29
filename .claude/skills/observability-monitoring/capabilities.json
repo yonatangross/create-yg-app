@@ -2,7 +2,7 @@
   "$schema": "../../schemas/skill-capabilities.schema.json",
   "name": "observability-monitoring",
   "version": "1.0.0",
-  "description": "Comprehensive frameworks for structured logging, metrics, distributed tracing, and alerting strategies with real-world YG Starter examples",
+  "description": "Comprehensive frameworks for structured logging, metrics, distributed tracing, and alerting strategies with real-world this project examples",
 
   "capabilities": {
     "structured-logging": {
@@ -139,9 +139,9 @@
         "How do I monitor LLM calls with Langfuse?",
         "Track LLM token usage and cost",
         "Trace multi-agent workflows",
-        "Real-world YG Starter LLM observability"
+        "Real-world LLM observability patterns"
       ],
-      "example_file": "SKILL.md#example-1-langfuse-observability-integration",
+      "example_file": "SKILL.md#example-1-llm-observability-with-langfuse",
       "token_cost": 200
     },
     "llm-cost-tracking": {
@@ -149,10 +149,10 @@
       "solves": [
         "How do I track LLM costs with Prometheus?",
         "Measure token usage by model and operation",
-        "Calculate cost per analysis/operation",
+        "Calculate cost per request/operation",
         "Build LLM cost dashboards"
       ],
-      "example_file": "SKILL.md#example-3-llm-cost-tracking",
+      "example_file": "SKILL.md#example-3-llm-cost-tracking-with-prometheus",
       "token_cost": 190
     }
   },
@@ -200,7 +200,7 @@
       "use_when": "Need specific implementation (e.g., correlation IDs, trace sampling)"
     },
     "tier_4_examples": {
-      "files": "SKILL.md#real-world-yg-starter-examples",
+      "files": "SKILL.md#real-world-project-examples",
       "tokens": "190-200 each",
       "use_when": "Ready to implement with real-world patterns"
     }

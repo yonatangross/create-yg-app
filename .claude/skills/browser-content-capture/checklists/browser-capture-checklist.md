@@ -80,14 +80,14 @@ content = mcp__playwright__browser_evaluate(script=extraction_script)
 - [ ] **Validate content** - Not empty, not error page
 - [ ] **Clean whitespace** - Remove excessive newlines
 - [ ] **Word count check** - Reasonable length for page type
-- [ ] **Queue to YG Starter** - Send for analysis
+- [ ] **Queue to your application** - Send for analysis
 
-## YG Starter Integration
+## your application Integration
 
 ```python
-from templates.queue_to_yg-starter import YG StarterClient
+from templates.queue_to_project import your applicationClient
 
-client = YG StarterClient()
+client = your applicationClient()
 result = await client.queue_for_analysis(
     url=captured_url,
     content=captured_content,
@@ -98,7 +98,7 @@ result = await client.queue_for_analysis(
 - [ ] Content sent successfully
 - [ ] Analysis ID received
 - [ ] Monitor progress via SSE
-- [ ] Verify searchable in YG Starter
+- [ ] Verify searchable in your application
 
 ## Troubleshooting
 
@@ -114,7 +114,7 @@ result = await client.queue_for_analysis(
 ## Quality Verification
 
 - [ ] **Random sample check** - Review 3-5 captured pages manually
-- [ ] **Search test** - Query YG Starter for expected content
+- [ ] **Search test** - Query your application for expected content
 - [ ] **Compare to source** - Ensure no content lost
 - [ ] **Check code blocks** - Properly formatted and complete
 

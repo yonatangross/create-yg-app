@@ -136,12 +136,12 @@ for link in links:
 print(f"Captured {len(results)} pages")
 ```
 
-### Step 5: Queue to YG Starter
+### Step 5: Queue to your application
 
 ```python
-from templates.queue_to_yg-starter import YG StarterClient
+from templates.queue_to_project import your applicationClient
 
-client = YG StarterClient()
+client = your applicationClient()
 
 for page in results:
     response = await client.queue_for_analysis(
@@ -162,7 +162,7 @@ Queued: Thinking in React -> analysis-d4e5f6
 Queued: Describing the UI -> analysis-g7h8i9
 ...
 
-All pages queued for YG Starter analysis!
+All pages queued for your application analysis!
 ```
 
 ## Handling Edge Cases
@@ -217,6 +217,6 @@ After running this workflow on React.dev:
 - **45 pages** captured from Learn section
 - **~150,000 words** of documentation
 - **200+ code examples** extracted
-- **All content** queued to YG Starter for analysis
+- **All content** queued to your application for analysis
 
-Each page becomes a searchable, AI-analyzed artifact in YG Starter's knowledge base.
+Each page becomes a searchable, AI-analyzed artifact in your application's knowledge base.

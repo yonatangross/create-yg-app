@@ -1,36 +1,36 @@
 #!/bin/bash
 # ============================================================
-# SkillForge GitHub CLI Helper Functions
+# GitHub CLI Helper Functions
 # Source this file: source .claude/skills/github-cli/scripts/gh-helpers.sh
 # ============================================================
 
-# Configuration
-export SF_REPO="ArieGoldkin/SkillForge"
-export SF_PROJECT_NUMBER=1
-export SF_PROJECT_OWNER="yonatangross"
-export SF_PROJECT_ID="PVT_kwHOAS8tks4BIL_t"
-export SF_STATUS_FIELD_ID="PVTSSF_lAHOAS8tks4BIL_tzg4uOTk"
+# Configuration - Update these for your project
+export GH_REPO="${GH_REPO:-owner/repo}"  # Set via environment or update here
+export GH_PROJECT_NUMBER="${GH_PROJECT_NUMBER:-1}"
+export GH_PROJECT_OWNER="${GH_PROJECT_OWNER:-$(gh api user --jq '.login' 2>/dev/null || echo 'owner')}"
+export GH_PROJECT_ID="${GH_PROJECT_ID:-}"  # Get from: gh project list --owner $GH_PROJECT_OWNER --format json
+export GH_STATUS_FIELD_ID="${GH_STATUS_FIELD_ID:-}"  # Get from project field query
 
-# Status Option IDs
-export SF_STATUS_READY="19303ae5"
-export SF_STATUS_IN_DEV="92ee1ecd"
-export SF_STATUS_CODE_COMPLETE="e27c7ae4"
-export SF_STATUS_REVIEW_READY="14cafa46"
-export SF_STATUS_APPROVED="1e03846e"
-export SF_STATUS_DEPLOYED="f39cbda5"
+# Status Option IDs (update for your project's status field options)
+export GH_STATUS_READY="${GH_STATUS_READY:-}"
+export GH_STATUS_IN_DEV="${GH_STATUS_IN_DEV:-}"
+export GH_STATUS_CODE_COMPLETE="${GH_STATUS_CODE_COMPLETE:-}"
+export GH_STATUS_REVIEW_READY="${GH_STATUS_REVIEW_READY:-}"
+export GH_STATUS_APPROVED="${GH_STATUS_APPROVED:-}"
+export GH_STATUS_DEPLOYED="${GH_STATUS_DEPLOYED:-}"
 
 # ============================================================
 # ISSUE FUNCTIONS
 # ============================================================
 
 # Create issue and return number
-sf_issue_create() {
+ghx_issue_create() {
     local title="$1"
     local body="${2:-No description provided.}"
     local labels="${3:-enhancement}"
     local milestone="${4:-}"
 
-    local cmd="gh issue create --repo $SF_REPO --title \"$title\" --body \"$body\" --label \"$labels\""
+    local cmd="gh issue create --repo $GH_REPO --title \"$title\" --body \"$body\" --label \"$labels\""
     [[ -n "$milestone" ]] && cmd="$cmd --milestone \"$milestone\""
     cmd="$cmd --json number --jq '.number'"
 
@@ -38,15 +38,15 @@ sf_issue_create() {
 }
 
 # Get issue URL
-sf_issue_url() {
+ghx_issue_url() {
     local issue_num="$1"
-    echo "https://github.com/$SF_REPO/issues/$issue_num"
+    echo "https://github.com/$GH_REPO/issues/$issue_num"
 }
 
 # List open issues by label
-sf_issues_by_label() {
+ghx_issues_by_label() {
     local label="$1"
-    gh issue list --repo "$SF_REPO" --label "$label" --state open \
+    gh issue list --repo "$GH_REPO" --label "$label" --state open \
         --json number,title --jq '.[] | "#\(.number): \(.title)"'
 }
 
@@ -55,16 +55,16 @@ sf_issues_by_label() {
 # ============================================================
 
 # Add issue to project board
-sf_project_add() {
+ghx_project_add() {
     local issue_url="$1"
-    gh project item-add "$SF_PROJECT_NUMBER" \
-        --owner "$SF_PROJECT_OWNER" \
+    gh project item-add "$GH_PROJECT_NUMBER" \
+        --owner "$GH_PROJECT_OWNER" \
         --url "$issue_url" \
         --format json | jq -r '.id'
 }
 
 # Set project item status
-sf_project_set_status() {
+ghx_project_set_status() {
     local item_id="$1"
     local status_option_id="$2"
 
@@ -80,9 +80,9 @@ sf_project_set_status() {
             }
         }
     ' \
-        -f pid="$SF_PROJECT_ID" \
+        -f pid="$GH_PROJECT_ID" \
         -f iid="$item_id" \
-        -f fid="$SF_STATUS_FIELD_ID" \
+        -f fid="$GH_STATUS_FIELD_ID" \
         -f oid="$status_option_id"
 }
 
@@ -91,11 +91,11 @@ sf_project_set_status() {
 # ============================================================
 
 # Create feature branch from issue
-sf_feature_branch() {
+ghx_feature_branch() {
     local issue_num="$1"
 
     # Get issue title
-    local title=$(gh issue view "$issue_num" --repo "$SF_REPO" \
+    local title=$(gh issue view "$issue_num" --repo "$GH_REPO" \
         --json title --jq '.title' | \
         tr '[:upper:]' '[:lower:]' | \
         sed 's/[^a-z0-9]/-/g' | \
@@ -116,13 +116,13 @@ sf_feature_branch() {
 # ============================================================
 
 # Create PR with standard format
-sf_pr_create() {
+ghx_pr_create() {
     local title="$1"
     local body="$2"
     local base="${3:-dev}"
 
     gh pr create \
-        --repo "$SF_REPO" \
+        --repo "$GH_REPO" \
         --title "$title" \
         --body "$body
 
@@ -133,10 +133,10 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>" \
 }
 
 # Check if PR is ready to merge
-sf_pr_ready() {
+ghx_pr_ready() {
     local pr_num="$1"
 
-    local data=$(gh pr view "$pr_num" --repo "$SF_REPO" \
+    local data=$(gh pr view "$pr_num" --repo "$GH_REPO" \
         --json reviewDecision,statusCheckRollupState,mergeable)
 
     local review=$(echo "$data" | jq -r '.reviewDecision')
@@ -161,7 +161,7 @@ sf_pr_ready() {
 # ============================================================
 
 # Check rate limit
-sf_rate_limit() {
+ghx_rate_limit() {
     gh api rate_limit --jq '.resources.core | {
         remaining: .remaining,
         limit: .limit,
@@ -170,7 +170,7 @@ sf_rate_limit() {
 }
 
 # Wait if rate limited
-sf_rate_limit_wait() {
+ghx_rate_limit_wait() {
     local min_remaining="${1:-50}"
 
     local remaining=$(gh api rate_limit --jq '.resources.core.remaining')
@@ -188,24 +188,24 @@ sf_rate_limit_wait() {
 # ============================================================
 
 # Create issue, branch, and add to project
-sf_start_feature() {
+ghx_start_feature() {
     local title="$1"
     local body="${2:-}"
     local labels="${3:-enhancement,backend}"
 
     echo "=== Creating Issue ==="
-    local issue_num=$(sf_issue_create "$title" "$body" "$labels")
-    local issue_url=$(sf_issue_url "$issue_num")
+    local issue_num=$(ghx_issue_create "$title" "$body" "$labels")
+    local issue_url=$(ghx_issue_url "$issue_num")
     echo "Created: #$issue_num - $issue_url"
 
     echo "=== Creating Branch ==="
-    local branch=$(sf_feature_branch "$issue_num")
+    local branch=$(ghx_feature_branch "$issue_num")
     echo "Branch: $branch"
 
     echo "=== Adding to Project ==="
-    local item_id=$(sf_project_add "$issue_url" 2>/dev/null || echo "")
+    local item_id=$(ghx_project_add "$issue_url" 2>/dev/null || echo "")
     if [[ -n "$item_id" ]]; then
-        sf_project_set_status "$item_id" "$SF_STATUS_IN_DEV" >/dev/null
+        ghx_project_set_status "$item_id" "$GH_STATUS_IN_DEV" >/dev/null
         echo "Added to project: $item_id"
     fi
 
@@ -217,7 +217,7 @@ sf_start_feature() {
 }
 
 # Finish feature (create PR)
-sf_finish_feature() {
+ghx_finish_feature() {
     local branch=$(git branch --show-current)
     local issue_num=$(echo "$branch" | grep -o '[0-9]*' | head -1)
 
@@ -227,14 +227,14 @@ sf_finish_feature() {
     fi
 
     # Get issue title
-    local issue_title=$(gh issue view "$issue_num" --repo "$SF_REPO" \
+    local issue_title=$(gh issue view "$issue_num" --repo "$GH_REPO" \
         --json title --jq '.title')
 
     echo "=== Pushing Branch ==="
     git push -u origin "$branch"
 
     echo "=== Creating PR ==="
-    sf_pr_create \
+    ghx_pr_create \
         "feat(#${issue_num}): ${issue_title}" \
         "## Summary
 Implements #${issue_num}
@@ -255,44 +255,46 @@ Closes #${issue_num}"
 # HELP
 # ============================================================
 
-sf_help() {
+ghx_help() {
     cat << 'EOF'
-SkillForge GitHub CLI Helpers
+GitHub CLI Extended Helpers (ghx_*)
 
 ISSUE FUNCTIONS:
-  sf_issue_create "title" ["body"] ["labels"]  - Create issue
-  sf_issue_url <number>                        - Get issue URL
-  sf_issues_by_label <label>                   - List issues by label
+  ghx_issue_create "title" ["body"] ["labels"]  - Create issue
+  ghx_issue_url <number>                        - Get issue URL
+  ghx_issues_by_label <label>                   - List issues by label
 
 PROJECT FUNCTIONS:
-  sf_project_add <issue_url>                   - Add to project board
-  sf_project_set_status <item_id> <status_id>  - Set status field
+  ghx_project_add <issue_url>                   - Add to project board
+  ghx_project_set_status <item_id> <status_id>  - Set status field
 
 BRANCH FUNCTIONS:
-  sf_feature_branch <issue_num>                - Create feature branch
+  ghx_feature_branch <issue_num>                - Create feature branch
 
 PR FUNCTIONS:
-  sf_pr_create "title" "body" [base]           - Create PR
-  sf_pr_ready <pr_num>                         - Check if ready to merge
+  ghx_pr_create "title" "body" [base]           - Create PR
+  ghx_pr_ready <pr_num>                         - Check if ready to merge
 
 RATE LIMIT:
-  sf_rate_limit                                - Check rate limit
-  sf_rate_limit_wait [min_remaining]           - Wait if rate limited
+  ghx_rate_limit                                - Check rate limit
+  ghx_rate_limit_wait [min_remaining]           - Wait if rate limited
 
 WORKFLOWS:
-  sf_start_feature "title" ["body"] ["labels"] - Full feature setup
-  sf_finish_feature                            - Create PR from current branch
+  ghx_start_feature "title" ["body"] ["labels"] - Full feature setup
+  ghx_finish_feature                            - Create PR from current branch
 
-ENVIRONMENT:
-  $SF_REPO              - ArieGoldkin/SkillForge
-  $SF_PROJECT_NUMBER    - 1
-  $SF_STATUS_IN_DEV     - 92ee1ecd (🚧 in-development)
-  $SF_STATUS_APPROVED   - 1e03846e (✅ approved)
+ENVIRONMENT (set before sourcing or via export):
+  $GH_REPO              - owner/repo (required)
+  $GH_PROJECT_NUMBER    - Project number (default: 1)
+  $GH_PROJECT_OWNER     - Project owner (default: current user)
+  $GH_STATUS_IN_DEV     - Status ID for in-development
+  $GH_STATUS_APPROVED   - Status ID for approved
 
 USAGE:
+  export GH_REPO="owner/repo"
   source .claude/skills/github-cli/scripts/gh-helpers.sh
-  sf_start_feature "Add hybrid search" "Implement RRF fusion" "enhancement,backend"
+  ghx_start_feature "Add hybrid search" "Implement RRF fusion" "enhancement,backend"
 EOF
 }
 
-echo "SkillForge gh-helpers loaded. Run 'sf_help' for usage."
+echo "GitHub CLI helpers loaded. Run 'ghx_help' for usage."

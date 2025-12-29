@@ -292,63 +292,65 @@ that pattern with a new route handler..."
 
 ## Real-World Brainstorming Examples
 
-### Example 1: YG Starter Content Analysis Pipeline
+### Example 1: E-commerce Product Recommendation Engine
 
 **Phase 1 - Understanding:**
-- Q: "What problem does this solve?" → A: "Analyze technical content at scale"
-- Q: "How many articles/day?" → A: "100-1000"
-- Q: "What kind of analysis?" → A: "Security, performance, code examples"
+- Q: "What problem does this solve?" → A: "Users can't discover relevant products"
+- Q: "How many products in catalog?" → A: "50,000+ products"
+- Q: "What data do we have?" → A: "Purchase history, browsing history, ratings"
 
 **Phase 2 - Exploration:**
-- Approach 1: Single LLM call (fast, shallow analysis)
-- Approach 2: Multiple specialist LLMs (slow, deep analysis) ← CHOSEN
-- Approach 3: Hybrid (fast first pass, deep on-demand)
+- Approach 1: Collaborative filtering (similar users, proven approach)
+- Approach 2: Content-based filtering (product attributes, simpler) ← CHOSEN
+- Approach 3: Hybrid ML model (best results, complex implementation)
 
 **Phase 3 - Design:**
-- Supervisor-worker pattern with 8 specialist agents
-- LangGraph for workflow orchestration
-- PostgreSQL for state persistence
-- Quality gate before output
+- Vector embeddings for product descriptions
+- PostgreSQL with pgvector extension
+- Batch embedding generation nightly
+- API endpoint returning top 10 similar products
 
-**Result:** YG Starter's current 8-agent analysis workflow
+**Result:** Simple, fast recommendation system launched in 2 weeks
 
-### Example 2: Caching Strategy
+### Example 2: Real-Time Analytics Dashboard
 
 **Phase 1 - Understanding:**
-- Q: "What are you caching?" → A: "LLM responses (expensive)"
-- Q: "How similar are queries?" → A: "Many near-duplicates"
-- Q: "Acceptable staleness?" → A: "5 minutes fine"
+- Q: "What metrics need to be real-time?" → A: "Active users, revenue, errors"
+- Q: "How many concurrent viewers?" → A: "10-50 at peak"
+- Q: "Acceptable latency?" → A: "Updates within 5 seconds fine"
 
 **Phase 2 - Exploration:**
-- Approach 1: Redis semantic cache (complex, high hit rate)
-- Approach 2: HTTP cache headers (simple, low hit rate)
-- Approach 3: Prompt caching (Claude native, 90% cost savings) ← CHOSEN
+- Approach 1: Server-Sent Events (simple, unidirectional) ← CHOSEN
+- Approach 2: WebSockets (complex, bidirectional not needed)
+- Approach 3: Polling (wasteful, high server load)
 
 **Phase 3 - Design:**
-- Multi-level: Prompt cache (L1) + Redis semantic cache (L2)
-- 5-minute TTL
-- Cache warming with golden queries
+- SSE endpoint streaming JSON updates every 3 seconds
+- Redis pub/sub for broadcasting to multiple viewers
+- Automatic reconnection with exponential backoff
+- Chart.js for real-time visualization
 
-**Result:** 70-95% cost reduction strategy
+**Result:** Real-time dashboard without WebSocket complexity
 
-### Example 3: Real-Time Dashboard Updates
+### Example 3: File Upload Service
 
 **Phase 1 - Understanding:**
-- Q: "What data updates in real-time?" → A: "Analysis progress"
-- Q: "How often?" → A: "Every 2-5 seconds"
-- Q: "How many concurrent users?" → A: "< 50"
+- Q: "What file types?" → A: "Images, PDFs, videos"
+- Q: "Max file size?" → A: "100MB per file"
+- Q: "Expected volume?" → A: "1000 uploads/day"
 
 **Phase 2 - Exploration:**
-- Approach 1: SSE (simple, server → client only) ← CHOSEN
-- Approach 2: WebSockets (complex, bidirectional)
-- Approach 3: Polling (wasteful, high latency)
+- Approach 1: Direct upload to S3 (fast, S3 costs)
+- Approach 2: Server upload then S3 (slower, more control) ← CHOSEN
+- Approach 3: Cloudinary (expensive, fully managed)
 
 **Phase 3 - Design:**
-- Server-Sent Events for progress updates
-- Event broadcaster pattern (pub/sub)
-- Automatic reconnection on disconnect
+- Multipart upload with progress tracking
+- Server-side virus scanning (ClamAV)
+- Image optimization and thumbnails (Sharp)
+- Store metadata in PostgreSQL, files in S3
 
-**Result:** YG Starter's SSE-based progress streaming
+**Result:** Secure upload service with virus scanning and optimization
 
 ---
 
@@ -377,5 +379,5 @@ that pattern with a new route handler..."
 
 ---
 
-**Version:** 1.0.0 (December 2025)
-**Status:** Production patterns from YG Starter brainstorming sessions
+**Version:** 1.1.0 (December 2025)
+**Status:** Production-ready patterns from real-world brainstorming sessions

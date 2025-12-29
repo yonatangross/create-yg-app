@@ -99,7 +99,7 @@ Return structured workflow design:
 
 ## Workflow Patterns
 
-### 1. Supervisor-Worker (YG Starter Default)
+### 1. Supervisor-Worker (this project Default)
 ```python
 from langgraph.graph import StateGraph, START, END
 

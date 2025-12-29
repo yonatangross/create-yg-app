@@ -22,7 +22,7 @@ Interpret $ARGUMENTS:
 
 # Backend tests with coverage
 cd backend
-poetry run pytest tests/unit/ -v --tb=short \
+uv run pytest tests/unit/ -v --tb=short \
   --cov=app --cov-report=term-missing \
   2>&1 | tee /tmp/backend_test_results.log &
 
@@ -38,19 +38,19 @@ wait
 
 ```bash
 # Backend - specific file
-poetry run pytest tests/unit/$ARGUMENTS -v --tb=short
+uv run pytest tests/unit/$ARGUMENTS -v --tb=short
 
 # Backend - specific test name
-poetry run pytest tests/unit/ -k "$ARGUMENTS" -v --tb=short
+uv run pytest tests/unit/ -k "$ARGUMENTS" -v --tb=short
 
 # Backend - with markers
-poetry run pytest tests/unit/ -m "not slow and not external" -v --tb=short
+uv run pytest tests/unit/ -m "not slow and not external" -v --tb=short
 
 # Frontend - specific pattern
 npm run test -- --testPathPattern="$ARGUMENTS"
 
 # Quick summary (fast)
-poetry run pytest tests/unit/ --tb=no -q 2>&1 | tail -20
+uv run pytest tests/unit/ --tb=no -q 2>&1 | tail -20
 ```
 
 ## Phase 3: Parallel Failure Analysis (If Tests Fail)
@@ -206,16 +206,16 @@ Then re-run tests to verify.
 
 ```bash
 # All backend tests
-cd backend && poetry run pytest tests/unit/ -v --tb=short
+cd backend && uv run pytest tests/unit/ -v --tb=short
 
 # Backend with coverage
-poetry run pytest tests/unit/ --cov=app --cov-report=term-missing
+uv run pytest tests/unit/ --cov=app --cov-report=term-missing
 
 # Quick backend (no tracebacks)
-poetry run pytest tests/unit/ --tb=no -q
+uv run pytest tests/unit/ --tb=no -q
 
 # Specific backend test
-poetry run pytest tests/unit/ -k "test_name" -v
+uv run pytest tests/unit/ -k "test_name" -v
 
 # All frontend tests
 cd frontend && npm run test

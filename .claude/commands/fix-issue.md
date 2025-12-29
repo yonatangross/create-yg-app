@@ -209,10 +209,10 @@ Task(
 ```bash
 # Run all checks
 cd backend
-poetry run ruff format --check app/
-poetry run ruff check app/
-poetry run ty check app/ --exclude "app/evaluation/*"
-poetry run pytest tests/unit/ -v --tb=short 2>&1 | tee /tmp/fix_tests.log
+uv run ruff format --check app/
+uv run ruff check app/
+uv run ty check app/ --exclude "app/evaluation/*"
+uv run pytest tests/unit/ -v --tb=short 2>&1 | tee /tmp/fix_tests.log
 
 cd frontend
 npm run format:check

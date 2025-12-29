@@ -125,7 +125,7 @@
       "use_when": "Need current LLM framework patterns and APIs"
     },
     "observability": {
-      "tool": "yg-starter-langfuse",
+      "tool": "langfuse",
       "use_when": "Setting up LLM tracing and evaluation"
     }
   }
