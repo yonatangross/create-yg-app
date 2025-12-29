@@ -213,7 +213,7 @@ USING hnsw (embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 ```
 
-**SkillForge Impact:**
+**YG Starter Impact:**
 - HNSW vs IVFFlat: **17x faster queries** (5ms vs 85ms)
 - Pre-computed tsvector: **5-10x faster** than computing on query
 
@@ -282,7 +282,7 @@ LIMIT 10;
 
 ### Multi-Level Cache Hierarchy
 
-**SkillForge Implementation:**
+**YG Starter Implementation:**
 ```
 L1: Prompt Caching (Claude native) - 90% cost savings, 0ms latency
 L2: Redis Semantic Cache - 70-85% cost savings, 5-10ms latency
@@ -356,7 +356,7 @@ async def get_llm_response(query: str) -> str:
 | **Event-driven** | Publish/subscribe | Invalidate on data change |
 | **Versioned keys** | Immutable data | `analysis:{id}:v2` |
 
-**SkillForge Cache Warming:**
+**YG Starter Cache Warming:**
 ```python
 # Warm cache with golden dataset queries at startup
 GOLDEN_QUERIES = [
@@ -790,7 +790,7 @@ function VirtualizedList({ items }: { items: Analysis[] }) {
 
 ---
 
-## Real-World SkillForge Examples
+## Real-World YG Starter Examples
 
 ### Example 1: Hybrid Search Optimization
 

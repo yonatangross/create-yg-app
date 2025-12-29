@@ -45,14 +45,14 @@
       "reference_file": "references/sse-deep-dive.md#reconnection-strategies",
       "token_cost": 200
     },
-    "skillforge-sse": {
-      "keywords": ["skillforge sse", "event broadcaster", "workflow events", "analysis progress"],
+    "yg-starter-sse": {
+      "keywords": ["yg-starter sse", "event broadcaster", "workflow events", "analysis progress"],
       "solves": [
-        "How does SkillForge SSE work?",
+        "How does YG Starter SSE work?",
         "EventBroadcaster implementation",
         "Real-world SSE example"
       ],
-      "example_file": "examples/skillforge-sse-implementation.md",
+      "example_file": "examples/yg-starter-sse-implementation.md",
       "token_cost": 900
     },
     "websocket": {

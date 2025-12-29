@@ -159,14 +159,14 @@
       "reference_file": "SKILL.md#quick-start-checklist",
       "token_cost": 140
     },
-    "skillforge-examples": {
-      "keywords": ["skillforge", "example", "real-world", "production"],
+    "yg-starter-examples": {
+      "keywords": ["yg-starter", "example", "real-world", "production"],
       "solves": [
         "Show me real-world schema examples",
-        "How is SkillForge schema designed?",
+        "How is YG Starter schema designed?",
         "Production schema patterns"
       ],
-      "example_file": "examples/skillforge-database-schema.md",
+      "example_file": "examples/yg-starter-database-schema.md",
       "token_cost": 280
     }
   },

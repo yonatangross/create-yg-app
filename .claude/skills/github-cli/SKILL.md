@@ -1,8 +1,8 @@
 ---
 name: github-cli
-description: GitHub CLI (gh) mastery for issues, PRs, Projects v2, and automation. Source of truth for SkillForge development workflow.
+description: GitHub CLI (gh) mastery for issues, PRs, Projects v2, and automation. Source of truth for YG Starter development workflow.
 version: 1.0.0
-author: SkillForge AI Agent Hub
+author: YG Starter AI Agent Hub
 tags: [github, gh, cli, issues, pr, projects, automation, 2025]
 ---
 
@@ -10,13 +10,13 @@ tags: [github, gh, cli, issues, pr, projects, automation, 2025]
 
 ## Overview
 
-Master the GitHub CLI (`gh`) for comprehensive project management. This skill covers issue creation, PR workflows, Projects v2 integration, and automation patterns tailored for SkillForge's development workflow.
+Master the GitHub CLI (`gh`) for comprehensive project management. This skill covers issue creation, PR workflows, Projects v2 integration, and automation patterns tailored for YG Starter's development workflow.
 
 **When to use:**
 - Creating/managing GitHub issues and PRs
 - Working with GitHub Projects v2 custom fields
 - Automating bulk operations with `gh`
-- Following SkillForge's branch and PR conventions
+- Following YG Starter's branch and PR conventions
 - Running GraphQL queries for complex operations
 
 ---
@@ -61,7 +61,7 @@ gh pr list --json state --jq '[.[] | select(.state == "OPEN")] | length'
 
 ---
 
-## SkillForge Workflow
+## YG Starter Workflow
 
 ### Branch Naming Convention
 
@@ -151,16 +151,16 @@ chore(#376): Upgrade December 2025 dependencies
 
 ### Project Board Integration
 
-SkillForge uses GitHub Projects v2 with custom fields. After creating an issue:
+YG Starter uses GitHub Projects v2 with custom fields. After creating an issue:
 
 ```bash
 # Add to project
 ITEM_ID=$(gh project item-add 1 --owner yonatangross \
-  --url "https://github.com/ArieGoldkin/SkillForge/issues/${ISSUE_NUM}" \
+  --url "https://github.com/ArieGoldkin/YG Starter/issues/${ISSUE_NUM}" \
   --format json | jq -r '.id')
 
 # Set Status to "In Development"
-# See templates/skillforge-project-config.json for field IDs
+# See templates/yg-starter-project-config.json for field IDs
 ```
 
 > **Note:** Setting custom fields requires GraphQL. See `references/projects-v2.md`.
@@ -222,7 +222,7 @@ For specific capabilities, see:
   - Review workflow, merge strategies, auto-merge
 
 - **Projects v2**: `references/projects-v2.md`
-  - Custom fields, GraphQL mutations, SkillForge field IDs
+  - Custom fields, GraphQL mutations, YG Starter field IDs
 
 - **GraphQL API**: `references/graphql-api.md`
   - Complex queries, pagination, bulk operations

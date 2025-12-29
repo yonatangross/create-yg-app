@@ -191,7 +191,7 @@ except Exception as e:
 
 ### Strategy 1: URI Versioning (Recommended for Public APIs)
 
-**SkillForge uses this approach:**
+**YG Starter uses this approach:**
 ```python
 # app/core/config.py
 API_V1_PREFIX = "/api/v1"
@@ -223,7 +223,7 @@ app.include_router(
 
 ```
 GET /api/analyses
-Accept: application/vnd.skillforge.v2+json
+Accept: application/vnd.yg-starter.v2+json
 API-Version: v2
 ```
 
@@ -603,5 +603,5 @@ async def get_analysis(
 ## Related Files
 
 - See `templates/openapi-template.yaml` for full OpenAPI specification example
-- See `examples/skillforge-api-design.md` for SkillForge-specific patterns
+- See `examples/yg-starter-api-design.md` for YG Starter-specific patterns
 - See SKILL.md for GraphQL and gRPC patterns

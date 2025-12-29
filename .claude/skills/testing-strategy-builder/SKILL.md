@@ -63,6 +63,11 @@ This skill references the following testing tools. Not all are required - the sk
   - **Install:** `pip install pytest-cov`
   - **Command:** `pytest --cov=.`
 
+- **pytest-vcr / VCR.py:** HTTP recording/playback (2025 STANDARD)
+  - **Install:** `pip install pytest-vcr vcrpy`
+  - **Config:** Add to `conftest.py`
+  - **Why VCR:** Record real HTTP responses once, replay deterministically
+
 - **Locust:** Performance testing
   - **Install:** `pip install locust`
   - **Command:** `locust -f locustfile.py`
@@ -524,13 +529,305 @@ describe('AnalysisForm', () => {
   })
 })
 
-### 4. Snapshot Testing
+### 4. VCR.py - Python HTTP Recording (2025 Standard)
+
+**VCR.py is the gold standard for testing Python code that makes HTTP requests.** It records real HTTP interactions once, then replays them for deterministic tests.
+
+#### Why VCR.py?
+
+| Approach | Problem |
+|----------|---------|
+| Mocking `requests` | Couples tests to implementation details |
+| Live HTTP calls | Slow, flaky, rate-limited, non-deterministic |
+| Manual fixtures | Tedious to maintain, drift from reality |
+| **VCR.py** | ✅ Records real responses, replays deterministically |
+
+#### Basic Setup
+
+```python
+# conftest.py
+import pytest
+import vcr
+
+# Configure VCR globally
+@pytest.fixture(scope="module")
+def vcr_config():
+    return {
+        "cassette_library_dir": "tests/cassettes",
+        "record_mode": "once",  # Record once, then replay
+        "match_on": ["uri", "method"],
+        "filter_headers": ["authorization", "x-api-key"],  # Security!
+        "filter_query_parameters": ["api_key", "token"],
+    }
+
+# Alternative: pytest-vcr fixture decorator
+@pytest.fixture
+def vcr_cassette_dir(request):
+    return f"tests/cassettes/{request.module.__name__}"
+```
+
+#### Basic Usage
+
+```python
+import pytest
+import vcr
+
+# Method 1: Context manager
+def test_fetch_user_data():
+    with vcr.use_cassette("tests/cassettes/user_data.yaml"):
+        response = requests.get("https://api.example.com/users/1")
+        assert response.status_code == 200
+        assert response.json()["name"] == "John Doe"
+
+# Method 2: pytest-vcr decorator (recommended)
+@pytest.mark.vcr()
+def test_fetch_user_data_decorator():
+    response = requests.get("https://api.example.com/users/1")
+    assert response.status_code == 200
+    assert response.json()["name"] == "John Doe"
+
+# Method 3: Custom cassette name
+@pytest.mark.vcr("custom_cassette_name.yaml")
+def test_with_custom_cassette():
+    response = requests.get("https://api.example.com/users/1")
+    assert response.status_code == 200
+```
+
+#### Async Support (httpx, aiohttp)
+
+```python
+import pytest
+import vcr
+from httpx import AsyncClient
+
+# VCR.py works with async HTTP clients
+@pytest.mark.asyncio
+@pytest.mark.vcr()
+async def test_async_api_call():
+    async with AsyncClient() as client:
+        response = await client.get("https://api.example.com/data")
+        assert response.status_code == 200
+        assert "items" in response.json()
+```
+
+#### Recording Modes
+
+```python
+# conftest.py - configure per environment
+@pytest.fixture(scope="module")
+def vcr_config():
+    import os
+
+    # CI: never record, only replay
+    if os.environ.get("CI"):
+        record_mode = "none"
+    # Dev: record new, keep existing
+    else:
+        record_mode = "new_episodes"
+
+    return {
+        "record_mode": record_mode,
+        "cassette_library_dir": "tests/cassettes",
+    }
+```
+
+| Mode | Behavior | Use Case |
+|------|----------|----------|
+| `once` | Record if cassette missing, then replay | Default for most tests |
+| `new_episodes` | Record new requests, replay existing | Adding to existing tests |
+| `none` | Never record, fail on new requests | CI environments |
+| `all` | Always record (overwrites) | Refreshing stale cassettes |
+
+#### Filtering Sensitive Data
+
+```python
+# conftest.py
+@pytest.fixture(scope="module")
+def vcr_config():
+    return {
+        # Remove headers before recording
+        "filter_headers": [
+            "authorization",
+            "x-api-key",
+            "cookie",
+            "set-cookie",
+        ],
+        # Remove query parameters
+        "filter_query_parameters": [
+            "api_key",
+            "access_token",
+            "client_secret",
+        ],
+        # Custom body filter
+        "before_record_request": filter_request_body,
+        "before_record_response": filter_response_body,
+    }
+
+def filter_request_body(request):
+    """Redact sensitive data from request body."""
+    if request.body:
+        import json
+        try:
+            body = json.loads(request.body)
+            if "password" in body:
+                body["password"] = "REDACTED"
+            if "api_key" in body:
+                body["api_key"] = "REDACTED"
+            request.body = json.dumps(body)
+        except json.JSONDecodeError:
+            pass
+    return request
+
+def filter_response_body(response):
+    """Redact sensitive data from response body."""
+    # Similar filtering logic
+    return response
+```
+
+#### Real-World Example: External API Service
+
+```python
+# tests/services/test_tavily_service.py
+import pytest
+from app.services.external.tavily_service import TavilySearchService
+
+@pytest.fixture
+def tavily_service():
+    return TavilySearchService(api_key="test-key")
+
+@pytest.mark.vcr()
+async def test_tavily_search_returns_results(tavily_service):
+    """Test Tavily search with recorded HTTP response."""
+    results = await tavily_service.search("Python async patterns")
+
+    assert len(results) > 0
+    assert all("url" in r for r in results)
+    assert all("content" in r for r in results)
+
+@pytest.mark.vcr()
+async def test_tavily_search_handles_empty_query(tavily_service):
+    """Test graceful handling of empty search."""
+    results = await tavily_service.search("")
+
+    assert results == []
+
+@pytest.mark.vcr()
+async def test_tavily_rate_limit_error(tavily_service):
+    """Test handling of rate limit response (cassette has 429)."""
+    with pytest.raises(RateLimitError):
+        await tavily_service.search("query that triggers rate limit")
+```
+
+#### Cassette File Example
+
+```yaml
+# tests/cassettes/test_tavily_search_returns_results.yaml
+interactions:
+- request:
+    body: '{"query": "Python async patterns", "max_results": 10}'
+    headers:
+      Content-Type: application/json
+      # Note: authorization header filtered out
+    method: POST
+    uri: https://api.tavily.com/search
+  response:
+    body:
+      string: '{"results": [{"url": "https://...", "content": "..."}]}'
+    headers:
+      Content-Type: application/json
+    status:
+      code: 200
+      message: OK
+version: 1
+```
+
+#### VCR.py + LLM API Testing
+
+```python
+# tests/services/test_llm_service.py
+import pytest
+import vcr
+
+# Custom matcher for LLM requests (ignore timestamp, request_id)
+def llm_request_matcher(r1, r2):
+    """Match LLM requests ignoring dynamic fields."""
+    import json
+
+    if r1.uri != r2.uri or r1.method != r2.method:
+        return False
+
+    body1 = json.loads(r1.body)
+    body2 = json.loads(r2.body)
+
+    # Ignore fields that change between runs
+    for field in ["request_id", "timestamp", "stream_id"]:
+        body1.pop(field, None)
+        body2.pop(field, None)
+
+    return body1 == body2
+
+@pytest.fixture(scope="module")
+def vcr_config():
+    return {
+        "cassette_library_dir": "tests/cassettes/llm",
+        "match_on": ["method", "uri"],
+        "custom_matchers": [llm_request_matcher],
+        "filter_headers": ["authorization", "x-api-key"],
+    }
+
+@pytest.mark.vcr()
+async def test_llm_completion():
+    """Test LLM completion with recorded response."""
+    response = await llm_client.complete(
+        model="claude-3-5-sonnet",
+        messages=[{"role": "user", "content": "Say hello"}]
+    )
+
+    assert response.content is not None
+    assert "hello" in response.content.lower()
+```
+
+#### VCR.py Anti-Patterns
+
+```python
+# ❌ NEVER: Commit cassettes with real API keys
+# Bad cassette file:
+# headers:
+#   authorization: Bearer sk-real-api-key-12345
+
+# ❌ NEVER: Use "all" mode in CI
+# record_mode: "all"  # Will try to make real HTTP calls!
+
+# ❌ NEVER: Skip VCR for "simple" HTTP tests
+def test_api_call():
+    # This will make REAL HTTP calls in tests!
+    response = requests.get("https://api.example.com/data")
+
+# ✅ ALWAYS: Filter sensitive data
+# ✅ ALWAYS: Use "none" mode in CI
+# ✅ ALWAYS: Wrap all HTTP tests with VCR
+```
+
+#### Refreshing Stale Cassettes
+
+```bash
+# Delete old cassette to re-record
+rm tests/cassettes/test_tavily_search_returns_results.yaml
+
+# Run test to record fresh response
+pytest tests/services/test_tavily_service.py::test_tavily_search_returns_results -v
+
+# Or use environment variable to force re-record
+VCR_RECORD_MODE=all pytest tests/services/ -v
+```
+
+### 5. Snapshot Testing
 
 **Use for:** UI components, API responses, generated code
 
 **Warning:** Snapshots can become brittle. Use for stable components, not rapidly changing UI.
 
-### 5. Parameterized Tests
+### 6. Parameterized Tests
 
 Test multiple scenarios with same logic using data tables.
 
@@ -889,11 +1186,19 @@ When testing LLM integrations, always test these edge cases:
 
 ---
 
-**Skill Version**: 1.2.0
-**Last Updated**: 2025-12-25
+**Skill Version**: 1.3.0
+**Last Updated**: 2025-12-27
 **Maintained by**: AI Agent Hub Team
 
 ## Changelog
+
+### v1.3.0 (2025-12-27)
+- Added VCR.py (pytest-vcr) as 2025 standard for Python HTTP recording/playback
+- Added comprehensive VCR.py patterns section with async support
+- Added VCR.py + LLM API testing patterns
+- Added cassette filtering for sensitive data
+- Added recording modes documentation (once, new_episodes, none, all)
+- Added VCR.py anti-patterns section
 
 ### v1.2.0 (2025-12-25)
 - Added MSW (Mock Service Worker) as 2025 standard for API mocking

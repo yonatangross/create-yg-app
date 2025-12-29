@@ -2,7 +2,7 @@
 name: langgraph-workflows
 description: Design and implement multi-agent workflows with LangGraph 1.0 - state management, supervisor-worker patterns, conditional routing, and fault-tolerant checkpointing
 version: 1.0.0
-author: SkillForge AI Agent Hub
+author: YG Starter AI Agent Hub
 tags: [langgraph, workflows, multi-agent, state-management, checkpointing, 2025]
 ---
 
@@ -12,7 +12,7 @@ tags: [langgraph, workflows, multi-agent, state-management, checkpointing, 2025]
 
 ## Overview
 
-LangGraph is a library for building stateful, multi-agent workflows as directed graphs. It's the foundation of SkillForge's 8-agent content analysis pipeline.
+LangGraph is a library for building stateful, multi-agent workflows as directed graphs. It's the foundation of YG Starter's 8-agent content analysis pipeline.
 
 **When to use this skill:**
 - Building multi-step AI workflows with agent coordination
@@ -59,7 +59,7 @@ class WorkflowState(BaseModel):
         self.agent_responses.append({"agent": agent, "result": result})
 ```
 
-**SkillForge Example:**
+**YG Starter Example:**
 ```python
 class AnalysisState(TypedDict):
     url: str
@@ -131,7 +131,7 @@ workflow.set_entry_point("supervisor")
 app = workflow.compile()
 ```
 
-**SkillForge's Supervisor Pattern:**
+**YG Starter's Supervisor Pattern:**
 ```python
 # backend/app/workflows/content_analysis_workflow.py
 def supervisor_node(state: AnalysisState) -> AnalysisState:
@@ -185,7 +185,7 @@ workflow.add_conditional_edges(
 )
 ```
 
-**SkillForge Example: Quality Gate**
+**YG Starter Example: Quality Gate**
 ```python
 def route_after_quality_gate(state: AnalysisState) -> str:
     """Route based on quality gate result."""
@@ -249,7 +249,7 @@ config = {"configurable": {"thread_id": "analysis-123"}}
 result = app.invoke(None, config=config)  # Resumes from last checkpoint
 ```
 
-**SkillForge Checkpointing:**
+**YG Starter Checkpointing:**
 ```python
 # backend/app/workflows/checkpoints.py
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -351,7 +351,7 @@ def security_agent_node(state: AnalysisState):
 
 ---
 
-## SkillForge's 8-Agent Analysis Pipeline
+## YG Starter's 8-Agent Analysis Pipeline
 
 **Architecture:**
 ```
@@ -613,7 +613,7 @@ result = app.invoke({"url": url})
 - [StateGraph API](https://langchain-ai.github.io/langgraph/reference/graphs/)
 - [Checkpointing Guide](https://langchain-ai.github.io/langgraph/how-tos/persistence/)
 
-### SkillForge Examples
+### YG Starter Examples
 - `backend/app/workflows/content_analysis_workflow.py` - Main analysis pipeline
 - `backend/app/workflows/nodes/` - Individual agent nodes
 - `backend/app/workflows/state.py` - State schema definitions
@@ -626,4 +626,4 @@ result = app.invoke({"url": url})
 ---
 
 **Version:** 1.0.0 (December 2025)
-**Status:** Production-ready patterns from SkillForge's multi-agent pipeline
+**Status:** Production-ready patterns from YG Starter's multi-agent pipeline

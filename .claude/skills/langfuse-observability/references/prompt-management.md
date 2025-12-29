@@ -114,15 +114,74 @@ prod_prompt = langfuse.get_prompt("analyzer", label="production")
 6. **A/B test** new prompts before full rollout
 7. **Document changes** in version notes
 
-## Migration from Hardcoded Prompts
+## YG Starter 4-Level Prompt Caching Architecture
+
+YG Starter uses a multi-level caching strategy with Jinja2 templates as L4 fallback:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PROMPT RESOLUTION                        │
+├─────────────────────────────────────────────────────────────┤
+│  L1: In-Memory LRU Cache (5min TTL)                         │
+│  └─► Hit? Return cached prompt                              │
+│                                                             │
+│  L2: Redis Cache (15min TTL)                                │
+│  └─► Hit? Populate L1, return prompt                        │
+│                                                             │
+│  L3: Langfuse API (cloud-managed)                           │
+│  └─► Hit? Populate L1+L2, return prompt (uses {var} syntax) │
+│                                                             │
+│  L4: Jinja2 Templates (local fallback)                      │
+│  └─► Uses TRUE Jinja2 {{ var }} syntax                      │
+│  └─► Variables passed at render time                        │
+│  └─► Located in: templates/*.j2                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### L4 Jinja2 Template Fallback (Issue #414)
+
+When Langfuse is unavailable, YG Starter falls back to Jinja2 templates:
 
 ```python
-# Before (hardcoded)
-system_prompt = "You are a security auditor. Analyze code for vulnerabilities..."
+from app.shared.services.prompts.template_loader import render_template
 
-# After (Langfuse-managed)
-prompt = langfuse.get_prompt("security_auditor", label="production")
-system_prompt = prompt.compile()
+# Templates use TRUE Jinja2 syntax: {{ variable }}
+# Variables passed directly to Jinja2, NOT Python .format()
+prompt = render_template("supervisor/routing.j2", agent_list=agent_list)
+```
+
+**Template location:** `backend/app/shared/services/prompts/templates/`
+- `supervisor/routing.j2` - Supervisor routing prompt
+- `agents/tier1/*.j2` - Tier 1 universal agents
+- `agents/tier2/*.j2` - Tier 2 validation agents
+- `agents/tier3/*.j2` - Tier 3 research agents
+- `evaluators/*.j2` - G-Eval evaluator prompts
+
+### Variable Syntax Distinction
+
+| Source | Syntax | Substitution |
+|--------|--------|--------------|
+| Langfuse prompts | `{variable}` | Python regex-based (via `_compile_prompt()`) |
+| Jinja2 templates | `{{ variable }}` | Native Jinja2 (via `render_template()`) |
+
+## Migration from Hardcoded Prompts (DEPRECATED)
+
+The old `HARDCODED_PROMPTS` dict is **REMOVED**. All prompts now use:
+1. **Langfuse** (primary, cloud-managed)
+2. **Jinja2 templates** (L4 fallback, version-controlled)
+
+```python
+# OLD (DEPRECATED - DO NOT USE):
+system_prompt = HARDCODED_PROMPTS["security_auditor"]
+
+# NEW (Recommended):
+prompt_manager = get_prompt_manager()
+system_prompt = await prompt_manager.get_prompt(
+    name="analysis-agent-security-auditor",
+    variables={},
+    label="production"
+)
+# Falls through: L1 → L2 → L3 (Langfuse) → L4 (Jinja2 templates)
 ```
 
 ## References

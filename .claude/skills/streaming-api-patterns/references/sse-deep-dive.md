@@ -688,6 +688,6 @@ async def test_sse():
 
 ## Related Files
 
-- See `examples/skillforge-sse-implementation.md` for SkillForge-specific patterns
+- See `examples/yg-starter-sse-implementation.md` for YG Starter-specific patterns
 - See `templates/sse-endpoint-template.ts` for TypeScript client template
 - See SKILL.md for WebSocket comparison and LLM streaming patterns

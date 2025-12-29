@@ -104,15 +104,15 @@
       "reference_file": "SKILL.md#monitoring-dashboard-queries",
       "token_cost": 90
     },
-    "skillforge-integration": {
-      "keywords": ["skillforge", "migration", "setup", "workflow integration"],
+    "yg-starter-integration": {
+      "keywords": ["yg-starter", "migration", "setup", "workflow integration"],
       "solves": [
-        "How does SkillForge use Langfuse?",
+        "How does YG Starter use Langfuse?",
         "Migrate from LangSmith to Langfuse",
-        "SkillForge workflow tracing patterns",
+        "YG Starter workflow tracing patterns",
         "Cost tracking per analysis"
       ],
-      "example_file": "SKILL.md#skillforge-integration",
+      "example_file": "SKILL.md#yg-starter-integration",
       "token_cost": 180
     },
     "multi-judge-evaluation": {
@@ -121,7 +121,7 @@
         "How do I use multiple LLM judges to evaluate quality?",
         "Set up G-Eval criteria evaluation",
         "Configure weighted scoring across judges",
-        "Wire SkillForge's existing langfuse_evaluators.py"
+        "Wire YG Starter's existing langfuse_evaluators.py"
       ],
       "reference_file": "references/multi-judge-evaluation.md",
       "token_cost": 200
@@ -188,7 +188,7 @@
       "use_when": "Need current Langfuse SDK API patterns"
     },
     "observability_access": {
-      "tool": "skillforge-langfuse",
+      "tool": "yg-starter-langfuse",
       "use_when": "Query Langfuse traces, datasets, and prompts from CLI (optional MCP server)"
     }
   }

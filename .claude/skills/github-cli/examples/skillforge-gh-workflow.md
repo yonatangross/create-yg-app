@@ -1,8 +1,8 @@
-# SkillForge GitHub CLI Workflow
+# YG Starter GitHub CLI Workflow
 
 ## Overview
 
-SkillForge uses `gh` (GitHub CLI) for all GitHub operations including PR creation, issue management, and project board updates. This ensures consistency, automation, and audit trails.
+YG Starter uses `gh` (GitHub CLI) for all GitHub operations including PR creation, issue management, and project board updates. This ensures consistency, automation, and audit trails.
 
 **Key Principles:**
 - NEVER commit directly to `dev` or `main` - always use feature branches
@@ -88,7 +88,7 @@ git checkout -b feature/llm-caching-patterns
 
 ### Conventional Commits
 
-SkillForge uses [Conventional Commits](https://www.conventionalcommits.org/) for changelog generation:
+YG Starter uses [Conventional Commits](https://www.conventionalcommits.org/) for changelog generation:
 
 ```bash
 # Format
@@ -320,7 +320,7 @@ gh issue reopen 273
 
 ## Project Board Management
 
-SkillForge uses GitHub Projects for sprint tracking.
+YG Starter uses GitHub Projects for sprint tracking.
 
 ### View Project Board
 
@@ -336,10 +336,10 @@ gh project view <PROJECT_NUMBER> --web
 
 ```bash
 # Add issue to project board
-gh issue edit 273 --add-project "SkillForge Sprint 1"
+gh issue edit 273 --add-project "YG Starter Sprint 1"
 
 # Add PR to project board
-gh pr edit 280 --add-project "SkillForge Sprint 1"
+gh pr edit 280 --add-project "YG Starter Sprint 1"
 ```
 
 ### Update Issue Status
@@ -628,7 +628,7 @@ Closes #
 ```yaml
 # .github/ISSUE_TEMPLATE/bug_report.yml
 name: Bug Report
-description: Report a bug in SkillForge
+description: Report a bug in YG Starter
 labels: ["bug"]
 body:
   - type: markdown
@@ -777,6 +777,6 @@ gh pr list --state merged --json number,headRefName --jq '.[] | .headRefName' | 
 
 - **GitHub CLI Docs:** https://cli.github.com/manual/
 - **Conventional Commits:** https://www.conventionalcommits.org/
-- **SkillForge Branch Strategy:** See `CLAUDE.md`
+- **YG Starter Branch Strategy:** See `CLAUDE.md`
 - **PR Template:** `.github/pull_request_template.md`
 - **Issue Templates:** `.github/ISSUE_TEMPLATE/`

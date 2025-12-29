@@ -6,7 +6,7 @@ GitHub Projects v2 uses custom fields for advanced project management. The `gh p
 
 ---
 
-## SkillForge Project Configuration
+## YG Starter Project Configuration
 
 **Project**: Reporter Accuracy - Sprint Board
 **Number**: 1
@@ -76,7 +76,7 @@ gh project field-list 1 --owner @me --format json
 
 # Add item to project
 gh project item-add 1 --owner @me \
-  --url "https://github.com/ArieGoldkin/SkillForge/issues/123"
+  --url "https://github.com/ArieGoldkin/YG Starter/issues/123"
 ```
 
 ---
@@ -153,7 +153,7 @@ PROJECT_NUMBER=1
 PROJECT_OWNER="yonatangross"
 PROJECT_ID="PVT_kwHOAS8tks4BIL_t"
 STATUS_FIELD_ID="PVTSSF_lAHOAS8tks4BIL_tzg4uOTk"
-REPO="ArieGoldkin/SkillForge"
+REPO="ArieGoldkin/YG Starter"
 
 # 1. Create issue
 ISSUE_URL=$(gh issue create \

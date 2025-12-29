@@ -75,7 +75,7 @@ Group operations by criticality.
 └────────────────────────────────────────────────────────────┘
 ```
 
-## Configuration for SkillForge
+## Configuration for YG Starter
 
 ### Agent Tier Assignment
 

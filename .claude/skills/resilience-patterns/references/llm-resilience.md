@@ -419,10 +419,10 @@ class QualityAwareFallback:
 5. **Set appropriate timeouts**: 30s for completion, 5s for embeddings
 6. **Log all fallback events**: Critical for understanding system behavior
 
-## SkillForge Integration
+## YG Starter Integration
 
 ```python
-# Example integration for SkillForge analysis pipeline
+# Example integration for YG Starter analysis pipeline
 
 llm_chain = FallbackChain(
     primary=LLMConfig(

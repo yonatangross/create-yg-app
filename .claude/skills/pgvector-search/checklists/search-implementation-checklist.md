@@ -541,10 +541,10 @@ LIMIT 30;
 | Wrong results | Validate RRF logic, check boosting factors, inspect rankings |
 | Index not used | Run ANALYZE, check query plan (EXPLAIN), verify index conditions |
 
-## SkillForge Integration
+## YG Starter Integration
 
 ```python
-# Example: Search for content in SkillForge
+# Example: Search for content in YG Starter
 from app.shared.services.search.search_service import SearchService
 
 search_service = SearchService()
@@ -569,7 +569,7 @@ for chunk, score in results:
 ## References
 
 - **PGVector Docs**: https://github.com/pgvector/pgvector
-- **SkillForge Implementation**: `backend/app/db/repositories/chunk_repository.py`
+- **YG Starter Implementation**: `backend/app/db/repositories/chunk_repository.py`
 - **Search Service**: `backend/app/shared/services/search/search_service.py`
 - **Constants**: `backend/app/core/constants.py`
 - **Related Skill**: `.claude/skills/database-schema-designer/`

@@ -659,6 +659,224 @@ Good: { "error": { "code": "DUPLICATE_EMAIL", "message": "Email already exists" 
 
 ---
 
+## Frontend API Integration (2025 Patterns)
+
+This section covers how frontend applications should consume APIs with type safety and resilience.
+
+### Runtime Validation with Zod
+
+**CRITICAL**: TypeScript types are erased at runtime. API responses MUST be validated:
+
+```typescript
+import { z } from 'zod'
+
+// Define schema matching API contract
+const UserSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  name: z.string(),
+  role: z.enum(['admin', 'developer', 'viewer']),
+  created_at: z.string().datetime(),
+})
+
+const UsersResponseSchema = z.object({
+  data: z.array(UserSchema),
+  pagination: z.object({
+    next_cursor: z.string().nullable(),
+    has_more: z.boolean(),
+  }),
+})
+
+type User = z.infer<typeof UserSchema>
+type UsersResponse = z.infer<typeof UsersResponseSchema>
+
+// Fetch with validation
+async function fetchUsers(cursor?: string): Promise<UsersResponse> {
+  const url = cursor ? `/api/v1/users?cursor=${cursor}` : '/api/v1/users'
+  const response = await fetch(url)
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await response.text())
+  }
+
+  const data = await response.json()
+  return UsersResponseSchema.parse(data) // Runtime validation!
+}
+```
+
+**Anti-patterns to avoid:**
+```typescript
+// ❌ NEVER: Trust API response types blindly
+const data = await response.json() as User  // Unsafe cast!
+
+// ❌ NEVER: Skip validation "because backend is typed"
+const user: User = await response.json()    // Runtime crash waiting to happen
+
+// ✅ ALWAYS: Validate at the boundary
+const user = UserSchema.parse(await response.json())
+```
+
+### Request Interceptors (ky/axios)
+
+Use interceptors for cross-cutting concerns:
+
+```typescript
+import ky from 'ky'
+
+// Create configured client
+export const api = ky.create({
+  prefixUrl: import.meta.env.VITE_API_URL,
+  timeout: 30000,
+  retry: {
+    limit: 2,
+    methods: ['get', 'head', 'options'],
+    statusCodes: [408, 429, 500, 502, 503, 504],
+    backoffLimit: 3000,
+  },
+  hooks: {
+    beforeRequest: [
+      // Auth injection
+      async (request) => {
+        const token = await getAccessToken()
+        if (token) {
+          request.headers.set('Authorization', `Bearer ${token}`)
+        }
+      },
+      // Request ID for tracing
+      (request) => {
+        request.headers.set('X-Request-ID', crypto.randomUUID())
+      },
+    ],
+    afterResponse: [
+      // Token refresh on 401
+      async (request, options, response) => {
+        if (response.status === 401) {
+          const newToken = await refreshToken()
+          if (newToken) {
+            request.headers.set('Authorization', `Bearer ${newToken}`)
+            return ky(request, options)
+          }
+        }
+        return response
+      },
+    ],
+    beforeError: [
+      // Enrich error with response body
+      async (error) => {
+        const { response } = error
+        if (response) {
+          try {
+            const body = await response.json()
+            error.message = body.error?.message || error.message
+            ;(error as any).code = body.error?.code
+          } catch {
+            // Response not JSON, keep original error
+          }
+        }
+        return error
+      },
+    ],
+  },
+})
+
+// Usage with Zod validation
+export async function getUsers(cursor?: string): Promise<UsersResponse> {
+  const searchParams = cursor ? { cursor } : undefined
+  const data = await api.get('users', { searchParams }).json()
+  return UsersResponseSchema.parse(data)
+}
+```
+
+### Error Enrichment Pattern
+
+Structured error handling with API error codes:
+
+```typescript
+// Custom API error class
+class ApiError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+    public details?: Array<{ field: string; message: string }>
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+
+  get isValidationError(): boolean {
+    return this.status === 422
+  }
+
+  get isAuthError(): boolean {
+    return this.status === 401 || this.status === 403
+  }
+
+  get isRateLimited(): boolean {
+    return this.status === 429
+  }
+}
+
+// Error parsing from API response
+const ApiErrorSchema = z.object({
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+    details: z.array(z.object({
+      field: z.string(),
+      message: z.string(),
+    })).optional(),
+  }),
+})
+
+function parseApiError(status: number, body: unknown): ApiError {
+  const parsed = ApiErrorSchema.safeParse(body)
+  if (parsed.success) {
+    return new ApiError(
+      status,
+      parsed.data.error.code,
+      parsed.data.error.message,
+      parsed.data.error.details
+    )
+  }
+  return new ApiError(status, 'UNKNOWN_ERROR', 'An unexpected error occurred')
+}
+```
+
+### Integration with TanStack Query
+
+```typescript
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+
+// Query with Zod validation built-in
+export function useUsers(cursor?: string) {
+  return useQuery({
+    queryKey: ['users', { cursor }],
+    queryFn: () => getUsers(cursor),
+    staleTime: 30_000, // 30 seconds
+  })
+}
+
+// Mutation with optimistic update
+export function useCreateUser() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (input: CreateUserInput) =>
+      api.post('users', { json: input }).json().then(UserSchema.parse),
+    onMutate: async (newUser) => {
+      await queryClient.cancelQueries({ queryKey: ['users'] })
+      // Optimistic update...
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+  })
+}
+```
+
+---
+
 ## Integration with Agents
 
 ### Backend System Architect
@@ -670,14 +888,26 @@ Good: { "error": { "code": "DUPLICATE_EMAIL", "message": "Email already exists" 
 - Reviews API contracts before implementation
 - Provides feedback on developer experience
 - Integrates with APIs following documented patterns
+- Uses Frontend API Integration patterns for type-safe consumption
 
 ### Code Quality Reviewer
 - Validates API designs against this framework
 - Ensures OpenAPI docs are accurate and complete
 - Checks for REST/GraphQL/gRPC best practices
+- Verifies frontend Zod schemas match backend contracts
 
 ---
 
-**Skill Version**: 1.0.0
-**Last Updated**: 2025-10-31
+**Skill Version**: 1.1.0
+**Last Updated**: 2025-12-29
 **Maintained by**: AI Agent Hub Team
+
+## Changelog
+
+### v1.1.0 (2025-12-29)
+- Added Frontend API Integration (2025 Patterns) section
+- Added Zod runtime validation patterns for API responses
+- Added request interceptors with ky (auth, retry, error enrichment)
+- Added ApiError class with structured error handling
+- Added TanStack Query integration examples
+- Updated agent integration notes for frontend patterns

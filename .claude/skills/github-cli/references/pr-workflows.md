@@ -19,7 +19,7 @@ gh pr create \
   --head feature/pgvector-search
 ```
 
-### Full PR Creation (SkillForge Pattern)
+### Full PR Creation (YG Starter Pattern)
 
 ```bash
 gh pr create \

@@ -1,6 +1,6 @@
 # GitHub CLI Checklist
 
-Quick reference checklist for common GitHub CLI operations in SkillForge development.
+Quick reference checklist for common GitHub CLI operations in YG Starter development.
 
 ---
 
@@ -392,7 +392,7 @@ None (or list changes)
 [ ] gh issue create --title "<title>" --assignee @me --label <label>
 
 # 3. Add to Project Board
-[ ] gh issue edit <issue-number> --add-project "SkillForge Sprint"
+[ ] gh issue edit <issue-number> --add-project "YG Starter Sprint"
 
 # 4. Link Related Issues
 [ ] Add "Related to #<issue>" in issue body
@@ -471,6 +471,6 @@ gh issue status                               # My issue status
 ## References
 
 - **GitHub CLI Manual:** https://cli.github.com/manual/
-- **SkillForge Git Workflow:** See `CLAUDE.md`
+- **YG Starter Git Workflow:** See `CLAUDE.md`
 - **Conventional Commits:** https://www.conventionalcommits.org/
-- **Example Workflow:** `.claude/skills/github-cli/examples/skillforge-gh-workflow.md`
+- **Example Workflow:** `.claude/skills/github-cli/examples/yg-starter-gh-workflow.md`

@@ -1,4 +1,4 @@
-# Code Quality Rules - SkillForge Backend
+# Code Quality Rules - YG Starter Backend
 
 **Version:** 1.0
 **Enforcement:** CI/CD pipeline + pre-commit validation

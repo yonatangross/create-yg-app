@@ -66,14 +66,14 @@
       "reference_file": "references/rest-patterns.md",
       "token_cost": 110
     },
-    "skillforge-api": {
-      "keywords": ["skillforge", "analysis api", "artifact api", "sse endpoint"],
+    "yg-starter-api": {
+      "keywords": ["yg-starter", "analysis api", "artifact api", "sse endpoint"],
       "solves": [
-        "How does SkillForge API work?",
-        "SkillForge endpoint design decisions",
+        "How does YG Starter API work?",
+        "YG Starter endpoint design decisions",
         "Real-world API design examples"
       ],
-      "example_file": "examples/skillforge-api-design.md",
+      "example_file": "examples/yg-starter-api-design.md",
       "token_cost": 650
     },
     "authentication": {

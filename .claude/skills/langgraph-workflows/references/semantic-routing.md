@@ -28,7 +28,7 @@
 
 ## The Routing Mismatch Problem
 
-In SkillForge, we have **two routing mechanisms that conflict**:
+In YG Starter, we have **two routing mechanisms that conflict**:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐

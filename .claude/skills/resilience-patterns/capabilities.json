@@ -59,14 +59,14 @@
       "related_capabilities": ["retry-strategies"]
     },
     {
-      "id": "skillforge-integration",
-      "keywords": ["SkillForge", "workflow", "agent", "LangGraph", "multi-agent"],
+      "id": "yg-starter-integration",
+      "keywords": ["YG Starter", "workflow", "agent", "LangGraph", "multi-agent"],
       "problems_solved": [
-        "Wire resilience patterns into SkillForge workflows",
+        "Wire resilience patterns into YG Starter workflows",
         "Configure per-agent circuit breakers and bulkheads",
         "Add observability to resilience events"
       ],
-      "files": ["examples/skillforge-workflow-resilience.md"],
+      "files": ["examples/yg-starter-workflow-resilience.md"],
       "related_capabilities": ["circuit-breaker", "bulkhead", "llm-resilience"]
     }
   ],

@@ -221,6 +221,148 @@ class ReconnectingEventSource {
 }
 ```
 
+## Python Async Generator Cleanup (2025 Best Practice)
+
+**CRITICAL**: Async generators can leak resources if not properly cleaned up. Python 3.10+ provides `aclosing()` from `contextlib` to guarantee cleanup.
+
+### The Problem
+
+```python
+# ❌ DANGEROUS: Generator not closed if exception occurs mid-iteration
+async def stream_analysis():
+    async for chunk in external_api_stream():  # What if exception here?
+        yield process(chunk)  # Generator may be garbage collected without cleanup
+
+# ❌ ALSO DANGEROUS: Using .aclose() manually is error-prone
+gen = stream_analysis()
+try:
+    async for chunk in gen:
+        process(chunk)
+finally:
+    await gen.aclose()  # Easy to forget, verbose
+```
+
+### The Solution: `aclosing()`
+
+```python
+from contextlib import aclosing
+
+# ✅ CORRECT: aclosing() guarantees cleanup
+async def stream_analysis():
+    async with aclosing(external_api_stream()) as stream:
+        async for chunk in stream:
+            yield process(chunk)
+
+# ✅ CORRECT: Using aclosing() at consumption site
+async def consume_stream():
+    async with aclosing(stream_analysis()) as gen:
+        async for chunk in gen:
+            handle(chunk)
+```
+
+### Real-World Pattern: LLM Streaming
+
+```python
+from contextlib import aclosing
+from langchain_core.runnables import RunnableConfig
+
+async def stream_llm_response(prompt: str, config: RunnableConfig | None = None):
+    """Stream LLM tokens with guaranteed cleanup."""
+    async with aclosing(llm.astream(prompt, config=config)) as stream:
+        async for chunk in stream:
+            yield chunk.content
+
+# Consumption with proper cleanup
+async def generate_response(user_input: str):
+    result_chunks = []
+    async with aclosing(stream_llm_response(user_input)) as response:
+        async for token in response:
+            result_chunks.append(token)
+            yield token  # Stream to client
+
+    # Post-processing after stream completes
+    full_response = "".join(result_chunks)
+    await log_response(full_response)
+```
+
+### Database Connection Pattern
+
+```python
+from contextlib import aclosing
+from typing import AsyncIterator
+from sqlalchemy.ext.asyncio import AsyncSession
+
+async def stream_large_query(
+    session: AsyncSession,
+    batch_size: int = 1000
+) -> AsyncIterator[Row]:
+    """Stream large query results with automatic connection cleanup."""
+    result = await session.execute(
+        select(Model).execution_options(stream_results=True)
+    )
+
+    async with aclosing(result.scalars()) as stream:
+        async for row in stream:
+            yield row
+```
+
+### When to Use `aclosing()`
+
+| Scenario | Use `aclosing()` |
+|----------|------------------|
+| External API streaming (LLM, HTTP) | ✅ **Always** |
+| Database streaming results | ✅ **Always** |
+| File streaming | ✅ **Always** |
+| Simple in-memory generators | ⚠️ Optional (no cleanup needed) |
+| Generator with `try/finally` cleanup | ✅ **Always** |
+
+### Anti-Patterns to Avoid
+
+```python
+# ❌ NEVER: Consuming without aclosing
+async for chunk in stream_analysis():
+    process(chunk)
+
+# ❌ NEVER: Manual try/finally (verbose, error-prone)
+gen = stream_analysis()
+try:
+    async for chunk in gen:
+        process(chunk)
+finally:
+    await gen.aclose()
+
+# ❌ NEVER: Assuming GC will handle cleanup
+gen = stream_analysis()
+# ... later gen goes out of scope without close
+```
+
+### Testing Async Generators
+
+```python
+import pytest
+from contextlib import aclosing
+
+@pytest.mark.asyncio
+async def test_stream_cleanup_on_error():
+    """Test that cleanup happens even when exception raised."""
+    cleanup_called = False
+
+    async def stream_with_cleanup():
+        nonlocal cleanup_called
+        try:
+            yield "data"
+            yield "more"
+        finally:
+            cleanup_called = True
+
+    with pytest.raises(ValueError):
+        async with aclosing(stream_with_cleanup()) as gen:
+            async for chunk in gen:
+                raise ValueError("simulated error")
+
+    assert cleanup_called, "Cleanup must run even on exception"
+```
+
 ## Best Practices
 
 ### SSE

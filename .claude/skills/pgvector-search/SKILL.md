@@ -2,7 +2,7 @@
 name: pgvector-search
 description: Production hybrid search with PGVector + BM25 using Reciprocal Rank Fusion, metadata filtering, and performance optimization for semantic retrieval
 version: 1.0.0
-author: SkillForge AI Agent Hub
+author: YG Starter AI Agent Hub
 tags: [pgvector, hybrid-search, bm25, rrf, semantic-search, retrieval, 2025]
 ---
 
@@ -119,7 +119,7 @@ def rrf_score(rank: int, k: int = 60) -> float:
 
 ---
 
-## SkillForge's Hybrid Search Implementation
+## YG Starter's Hybrid Search Implementation
 
 ### Database Schema
 
@@ -320,7 +320,7 @@ CREATE INDEX idx_embedding ON chunks
 - **Much faster queries** (10-100x)
 - Scales to millions of vectors
 
-**SkillForge uses HNSW (415 chunks, room to scale to 10M+).**
+**YG Starter uses HNSW (415 chunks, room to scale to 10M+).**
 
 **Detailed Comparison:** See `references/indexing-strategies.md`
 
@@ -346,7 +346,7 @@ if is_technical_query(query) and chunk.content_type == "code_block":
     rrf_score *= 1.2
 ```
 
-**SkillForge Evaluation:**
+**YG Starter Evaluation:**
 - **Before boosting:** 91.1% pass rate, 0.647 MRR (Hard queries)
 - **After boosting:** 91.6% pass rate, 0.686 MRR (Hard queries)
 - **Improvement:** +0.5% pass rate, +6% MRR
@@ -453,7 +453,7 @@ async def test_hybrid_search_golden_dataset():
 - [PGVector GitHub](https://github.com/pgvector/pgvector)
 - [HNSW Index Guide](https://github.com/pgvector/pgvector#hnsw)
 
-### SkillForge Implementation
+### YG Starter Implementation
 - `backend/app/db/repositories/chunk_repository.py` - Hybrid search implementation
 - `backend/app/shared/services/search/search_service.py` - Search service layer
 - `backend/app/core/constants.py` - Search constants (fetch multiplier, boosting factors)
@@ -466,4 +466,4 @@ async def test_hybrid_search_golden_dataset():
 ---
 
 **Version:** 1.0.0 (December 2025)
-**Status:** Production-ready patterns from SkillForge's 415-chunk golden dataset
+**Status:** Production-ready patterns from YG Starter's 415-chunk golden dataset

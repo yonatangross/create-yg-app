@@ -1,4 +1,4 @@
-# Code Quality Rules - SkillForge Frontend
+# Code Quality Rules - YG Starter Frontend
 
 **Version:** 1.0
 **Enforcement:** Pre-commit hooks (errors block commits)

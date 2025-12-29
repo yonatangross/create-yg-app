@@ -48,7 +48,7 @@ workflow.add_conditional_edges(
 
 ---
 
-## SkillForge's Quality Gate Router
+## YG Starter's Quality Gate Router
 
 ```python
 # backend/app/workflows/nodes/quality_gate_node.py
@@ -491,4 +491,4 @@ workflow.add_conditional_edges("dispatcher", dynamic_fan_out)
 
 - [LangGraph Conditional Edges](https://langchain-ai.github.io/langgraph/how-tos/branching/)
 - [Quality Gate Pattern](https://langchain-ai.github.io/langgraph/tutorials/branching/)
-- SkillForge: `backend/app/workflows/nodes/quality_gate_node.py`
+- YG Starter: `backend/app/workflows/nodes/quality_gate_node.py`

@@ -373,13 +373,13 @@ def fan_in_health_check(state: AnalysisState) -> dict:
     }
 ```
 
-## SkillForge Integration
+## YG Starter Integration
 
 ```python
 # backend/app/domains/analysis/workflows/graph_builder.py
 
 def build_analysis_graph() -> StateGraph:
-    """Build SkillForge analysis graph with proper fan-in."""
+    """Build YG Starter analysis graph with proper fan-in."""
 
     workflow = StateGraph(AnalysisState)
 

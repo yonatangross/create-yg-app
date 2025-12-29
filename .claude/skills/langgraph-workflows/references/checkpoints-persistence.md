@@ -99,7 +99,7 @@ app = workflow.compile(checkpointer=checkpointer)
 - Requires PostgreSQL setup
 - Slightly slower than memory
 
-**SkillForge uses PostgreSQL checkpointing.**
+**YG Starter uses PostgreSQL checkpointing.**
 
 ---
 
@@ -172,7 +172,7 @@ else:
 
 ---
 
-## SkillForge Checkpointing
+## YG Starter Checkpointing
 
 ```python
 # backend/app/workflows/checkpoints.py
@@ -228,7 +228,7 @@ async def analyze_content(url: str):
         return result
 ```
 
-**Benefits for SkillForge:**
+**Benefits for YG Starter:**
 1. **8-agent pipeline:** If agent 5 crashes, resume from agent 5 (don't re-run 1-4)
 2. **Expensive LLM calls:** Each agent's output checkpointed (cost savings)
 3. **Quality gate:** Can pause for manual review if quality low
@@ -425,7 +425,7 @@ checkpointer = PostgresSaver.from_conn_string(
 - State contains non-JSON types (datetime, custom classes)
 - Binary data (images, embeddings)
 
-**SkillForge:** Uses JSON serialization (Pydantic models serialize automatically).
+**YG Starter:** Uses JSON serialization (Pydantic models serialize automatically).
 
 ---
 
@@ -528,4 +528,4 @@ print(f"State: {state.values}")
 - [LangGraph Checkpointing Guide](https://langchain-ai.github.io/langgraph/how-tos/persistence/)
 - [Human-in-the-Loop Tutorial](https://langchain-ai.github.io/langgraph/how-tos/human_in_the_loop/)
 - [PostgreSQL Checkpointer API](https://langchain-ai.github.io/langgraph/reference/checkpoints/)
-- SkillForge: `backend/app/workflows/checkpoints.py`
+- YG Starter: `backend/app/workflows/checkpoints.py`

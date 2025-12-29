@@ -305,7 +305,7 @@ def run_workflow(url: str):
 | Checkpoint error | Verify database connection, check schema |
 | Memory leak | Inspect state accumulation, clear old data |
 
-## SkillForge Integration
+## YG Starter Integration
 
 ```python
 # Example: Content analysis workflow
@@ -329,6 +329,6 @@ result = await workflow.run(
 ## References
 
 - **LangGraph Docs**: https://langchain-ai.github.io/langgraph/
-- **SkillForge Example**: `backend/app/workflows/content_analysis_workflow.py`
+- **YG Starter Example**: `backend/app/workflows/content_analysis_workflow.py`
 - **State Schema**: `backend/app/workflows/state.py`
 - **Related Skill**: `.claude/skills/langfuse-observability/`
