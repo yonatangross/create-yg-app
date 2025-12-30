@@ -3,9 +3,35 @@
 All unit tests should be fully isolated with no real I/O.
 """
 
+import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def mock_environment_variables():
+    """Mock required environment variables for unit tests.
+
+    This ensures unit tests don't fail due to missing config.
+    """
+    from app.core.config import get_settings
+
+    # Clear settings cache to pick up mocked env vars
+    get_settings.cache_clear()
+
+    env_vars = {
+        "DATABASE_URL": "postgresql+asyncpg://test:test@localhost:5432/test",
+        "REDIS_URL": "redis://localhost:6379",
+        "OPENAI_API_KEY": "sk-test-fake-key-for-unit-tests",
+        "ENVIRONMENT": "test",
+    }
+    with patch.dict(os.environ, env_vars):
+        # Clear again after patching to ensure fresh settings
+        get_settings.cache_clear()
+        yield
+        # Clear after test to not affect other tests
+        get_settings.cache_clear()
 
 
 @pytest.fixture(autouse=True)

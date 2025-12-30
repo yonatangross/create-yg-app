@@ -4,7 +4,7 @@ Tests the compaction service that compresses long conversations into summaries
 while preserving recent messages for context efficiency.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -534,13 +534,16 @@ class TestSessionCompactor:
         """Test that LLM is lazily initialized."""
         assert compactor._llm is None
 
-        # Call _get_llm
-        llm1 = compactor._get_llm()
-        assert compactor._llm is not None
+        # Mock the LLM factory to avoid needing real API keys
+        mock_llm = MagicMock()
+        with patch("app.shared.services.memory.compaction_service.LLMFactory.create", return_value=mock_llm):
+            # Call _get_llm
+            llm1 = compactor._get_llm()
+            assert compactor._llm is not None
 
-        # Call again, should return same instance
-        llm2 = compactor._get_llm()
-        assert llm1 is llm2
+            # Call again, should return same instance (cached)
+            llm2 = compactor._get_llm()
+            assert llm1 is llm2
 
 
 class TestCompactIfNeededConvenienceFunction:
