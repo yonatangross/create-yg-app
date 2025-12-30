@@ -12,13 +12,13 @@ import contextlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-pytestmark = [pytest.mark.integration, pytest.mark.slow]
 from httpx import ASGITransport, AsyncClient
 from langchain_core.messages import AIMessage, HumanMessage
 
 from app.main import app
 from app.shared.services.memory.compaction_service import CompactionResult
+
+pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
 
 class TestChatCompactionIntegration:

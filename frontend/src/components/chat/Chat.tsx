@@ -7,6 +7,7 @@ export function Chat() {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const messages = useChatStore((state) => state.messages);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Intentional - scroll on messages change
 	useEffect(() => {
 		if (scrollRef.current) {
 			scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

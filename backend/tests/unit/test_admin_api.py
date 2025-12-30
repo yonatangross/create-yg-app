@@ -59,10 +59,12 @@ async def test_verify_admin_key_dev_mode_no_key():
 
     Note: This test uses its own ADMIN_API_KEY patch to override the autouse fixture.
     """
-    with patch.object(settings, "ADMIN_API_KEY", None):
-        with patch.object(settings, "ENVIRONMENT", "development"):
-            # Should not raise - dev mode allows access without key
-            await verify_admin_key(x_admin_key=None)
+    with (
+        patch.object(settings, "ADMIN_API_KEY", None),
+        patch.object(settings, "ENVIRONMENT", "development"),
+    ):
+        # Should not raise - dev mode allows access without key
+        await verify_admin_key(x_admin_key=None)
 
 
 @pytest.mark.asyncio
@@ -71,13 +73,15 @@ async def test_verify_admin_key_production_no_key_configured():
 
     Note: This test uses its own ADMIN_API_KEY patch to override the autouse fixture.
     """
-    with patch.object(settings, "ADMIN_API_KEY", None):
-        with patch.object(settings, "ENVIRONMENT", "production"):
-            with pytest.raises(HTTPException) as exc_info:
-                await verify_admin_key(x_admin_key=None)
+    with (
+        patch.object(settings, "ADMIN_API_KEY", None),
+        patch.object(settings, "ENVIRONMENT", "production"),
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            await verify_admin_key(x_admin_key=None)
 
-            assert exc_info.value.status_code == 500
-            assert "not configured" in exc_info.value.detail
+        assert exc_info.value.status_code == 500
+        assert "not configured" in exc_info.value.detail
 
 
 # --- Memory Endpoints Tests (with mocked DB) ---
@@ -348,7 +352,7 @@ def test_memory_stats(client, mock_db_session):
         if call_count[0] == 1:  # Total count
             result.scalar.return_value = 10
         elif call_count[0] == 2:  # By type
-            result.__iter__ = lambda self: iter([])
+            result.__iter__ = lambda _self: iter([])
         elif call_count[0] == 3 or call_count[0] == 4:  # Oldest
             result.scalar.return_value = None
         return result

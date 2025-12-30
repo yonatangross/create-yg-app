@@ -151,7 +151,7 @@ const formatConsoleOutput = (entry: LogEntry): void => {
   // Format: [TIMESTAMP] LEVEL module event { fields }
   const timeStr = gray + timestamp.split('T')[1].slice(0, 12) + reset
   const levelStr = levelColors[level] + level.toUpperCase().padEnd(5) + reset
-  const moduleStr = gray + `[${module}]` + reset
+  const moduleStr = `${gray}[${module}]${reset}`
   const eventStr = `${event}`
 
   // Console method based on level

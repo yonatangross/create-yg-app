@@ -28,16 +28,18 @@ def test_readiness_check(client):
     mock_redis = AsyncMock()
     mock_redis.ping.return_value = True
 
-    with patch("app.api.v1.health.get_session", mock_get_session):
-        with patch("redis.asyncio.from_url") as mock_redis_from_url:
-            mock_redis_from_url.return_value = mock_redis
+    with (
+        patch("app.api.v1.health.get_session", mock_get_session),
+        patch("redis.asyncio.from_url") as mock_redis_from_url,
+    ):
+        mock_redis_from_url.return_value = mock_redis
 
-            response = client.get("/api/v1/health/ready")
-            assert response.status_code == 200
-            data = response.json()
-            assert data["status"] == "ready"
-            assert data["checks"]["database"] is True
-            assert data["checks"]["redis"] is True
+        response = client.get("/api/v1/health/ready")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "ready"
+        assert data["checks"]["database"] is True
+        assert data["checks"]["redis"] is True
 
 
 def test_readiness_check_db_failure(client):
@@ -53,16 +55,18 @@ def test_readiness_check_db_failure(client):
     mock_redis = AsyncMock()
     mock_redis.ping.return_value = True
 
-    with patch("app.api.v1.health.get_session", mock_get_session_fail):
-        with patch("redis.asyncio.from_url") as mock_redis_from_url:
-            mock_redis_from_url.return_value = mock_redis
+    with (
+        patch("app.api.v1.health.get_session", mock_get_session_fail),
+        patch("redis.asyncio.from_url") as mock_redis_from_url,
+    ):
+        mock_redis_from_url.return_value = mock_redis
 
-            response = client.get("/api/v1/health/ready")
-            assert response.status_code == 503
-            data = response.json()
-            assert data["status"] == "not_ready"
-            assert data["checks"]["database"] is False
-            assert data["checks"]["redis"] is True
+        response = client.get("/api/v1/health/ready")
+        assert response.status_code == 503
+        data = response.json()
+        assert data["status"] == "not_ready"
+        assert data["checks"]["database"] is False
+        assert data["checks"]["redis"] is True
 
 
 def test_readiness_check_redis_failure(client):
@@ -78,13 +82,15 @@ def test_readiness_check_redis_failure(client):
     mock_redis = AsyncMock()
     mock_redis.ping.side_effect = Exception("Redis connection failed")
 
-    with patch("app.api.v1.health.get_session", mock_get_session):
-        with patch("redis.asyncio.from_url") as mock_redis_from_url:
-            mock_redis_from_url.return_value = mock_redis
+    with (
+        patch("app.api.v1.health.get_session", mock_get_session),
+        patch("redis.asyncio.from_url") as mock_redis_from_url,
+    ):
+        mock_redis_from_url.return_value = mock_redis
 
-            response = client.get("/api/v1/health/ready")
-            assert response.status_code == 503
-            data = response.json()
-            assert data["status"] == "not_ready"
-            assert data["checks"]["database"] is True
-            assert data["checks"]["redis"] is False
+        response = client.get("/api/v1/health/ready")
+        assert response.status_code == 503
+        data = response.json()
+        assert data["status"] == "not_ready"
+        assert data["checks"]["database"] is True
+        assert data["checks"]["redis"] is False

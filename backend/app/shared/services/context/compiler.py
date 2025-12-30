@@ -33,7 +33,7 @@ class CompilerResult:
     @property
     def total_tokens(self) -> int:
         """Calculate total tokens in compiled context."""
-        return self.metrics.get("total_tokens", 0)
+        return int(self.metrics.get("total_tokens", 0))
 
     @property
     def compression_ratio(self) -> float:

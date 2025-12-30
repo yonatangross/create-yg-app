@@ -5,6 +5,5 @@ The autouse fixtures from tests/unit/conftest.py are NOT applied here.
 """
 
 
-
 # Integration tests can use real asyncio.sleep for timing-sensitive tests
 # No autouse fixture to prevent this

@@ -37,9 +37,11 @@ def prevent_real_redis_connections():
             "Real Redis connection attempted in unit test! Use mock_redis fixture instead."
         )
 
-    with patch("redis.asyncio.from_url", side_effect=raise_redis_error):
-        with patch("redis.Redis", side_effect=raise_redis_error):
-            yield
+    with (
+        patch("redis.asyncio.from_url", side_effect=raise_redis_error),
+        patch("redis.Redis", side_effect=raise_redis_error),
+    ):
+        yield
 
 
 @pytest.fixture(autouse=True)

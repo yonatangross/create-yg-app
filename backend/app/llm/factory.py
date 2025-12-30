@@ -212,8 +212,8 @@ class LLMFactory:
         from langchain_openai import ChatOpenAI
 
         return ChatOpenAI(
-            model=model,
-            api_key=settings.OPENAI_API_KEY,
+            model=model,  # type: ignore[call-arg]
+            api_key=settings.OPENAI_API_KEY,  # type: ignore[call-arg]
             **kwargs,
         )
 
@@ -230,8 +230,8 @@ class LLMFactory:
         from langchain_anthropic import ChatAnthropic
 
         return ChatAnthropic(
-            model=model,
-            api_key=settings.ANTHROPIC_API_KEY,
+            model=model,  # type: ignore[call-arg]
+            api_key=settings.ANTHROPIC_API_KEY,  # type: ignore[call-arg]
             **kwargs,
         )
 

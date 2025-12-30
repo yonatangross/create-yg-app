@@ -74,7 +74,7 @@ logs-frontend:
 
 test:
 	cd backend && uv run pytest
-	cd frontend && npm test
+	cd frontend && pnpm test
 
 test-unit:
 	cd backend && uv run pytest tests/unit -m unit -v
@@ -89,7 +89,7 @@ test-integration:
 
 test-all:
 	cd backend && uv run pytest tests/ -v
-	cd frontend && npm test
+	cd frontend && pnpm test
 
 coverage:
 	cd backend && uv run pytest tests/unit -m unit --cov=app --cov-report=html --cov-report=term-missing
@@ -108,23 +108,23 @@ e2e:
 
 lint:
 	cd backend && uv run ruff check .
-	cd frontend && npm run lint
+	cd frontend && pnpm lint
 
 lint-fix:
 	cd backend && uv run ruff check --fix .
-	cd frontend && npm run lint:fix
+	cd frontend && pnpm lint:fix
 
 format:
 	cd backend && uv run ruff format .
-	cd frontend && npm run format
+	cd frontend && pnpm format
 
 format-check:
 	cd backend && uv run ruff format --check .
-	cd frontend && npm run format:check
+	cd frontend && pnpm format:check
 
 typecheck:
 	cd backend && uv run ty check
-	cd frontend && npm run typecheck
+	cd frontend && pnpm typecheck
 
 # -----------------------------------------------------------------------------
 # Database
@@ -146,7 +146,7 @@ migrate-down:
 setup:
 	cp backend/.env.example backend/.env
 	cd backend && uv sync
-	cd frontend && npm install
+	cd frontend && pnpm install
 	@echo "Setup complete! Edit backend/.env with your API keys, then run 'make dev' to start."
 
 # -----------------------------------------------------------------------------
