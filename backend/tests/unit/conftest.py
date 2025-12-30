@@ -86,3 +86,18 @@ def prevent_real_http_requests(monkeypatch):
 
     # Prevent real requests via httpx
     monkeypatch.setattr(httpx.AsyncClient, "request", raise_http_error)
+
+
+@pytest.fixture(autouse=True)
+def prevent_real_database_connections():
+    """Prevent accidental real database connections in unit tests.
+
+    Tests that need database should explicitly provide mock_db_session fixture.
+    """
+    from unittest.mock import MagicMock
+
+    # Create a mock engine that doesn't connect
+    mock_engine = MagicMock()
+
+    with patch("app.db.session.get_engine", return_value=mock_engine):
+        yield
