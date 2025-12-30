@@ -1,18 +1,25 @@
 ---
 name: langgraph-workflows
-description: Design and implement multi-agent workflows with LangGraph 1.0 - state management, supervisor-worker patterns, conditional routing, and fault-tolerant checkpointing
-version: 1.0.0
-author: SkillForge AI Agent Hub
+description: Design and implement multi-agent workflows with LangGraph 0.2+ - state management, supervisor-worker patterns, conditional routing, and fault-tolerant checkpointing
+version: 2.0.0
+author: YG Starter Template
 tags: [langgraph, workflows, multi-agent, state-management, checkpointing, 2025]
 ---
 
 # LangGraph Workflows
 
-**Master multi-agent workflow orchestration with LangGraph 1.0+**
+**Master multi-agent workflow orchestration with LangGraph 0.2+**
 
 ## Overview
 
-LangGraph is a library for building stateful, multi-agent workflows as directed graphs. It's the foundation of SkillForge's 8-agent content analysis pipeline.
+LangGraph is a library for building stateful, multi-agent workflows as directed graphs. This skill covers production patterns for building complex AI workflows with fault tolerance, checkpointing, and observability.
+
+**Real-World Use Cases:**
+- **Multi-Agent Code Review**: Security, performance, style, and test coverage agents
+- **E-commerce Product Enrichment**: Image classification, attribute extraction, SEO optimization
+- **Customer Support Routing**: Intent classification, priority scoring, agent assignment
+- **Document Processing Pipeline**: OCR, entity extraction, summarization, QA validation
+- **Research Assistant**: Query expansion, retrieval, synthesis, fact-checking
 
 **When to use this skill:**
 - Building multi-step AI workflows with agent coordination
@@ -59,20 +66,24 @@ class WorkflowState(BaseModel):
         self.agent_responses.append({"agent": agent, "result": result})
 ```
 
-**SkillForge Example:**
+**Real-World Example: Code Review Pipeline**
 ```python
-class AnalysisState(TypedDict):
-    url: str
-    raw_content: str
+class CodeReviewState(TypedDict):
+    repository: str
+    pull_request_id: int
+    code_diff: str
 
     # Agent outputs (each agent adds to these)
-    findings: Annotated[list[Finding], add]
-    embeddings: Annotated[list[Embedding], add]
+    security_findings: Annotated[list[SecurityIssue], add]
+    performance_issues: Annotated[list[PerformanceWarning], add]
+    style_violations: Annotated[list[StyleViolation], add]
+    test_coverage_gaps: Annotated[list[CoverageGap], add]
 
     # Control flow
     current_agent: str
     agents_completed: list[str]
     quality_passed: bool
+    requires_human_review: bool
 ```
 
 **Key Pattern: `Annotated[list[T], add]`**
@@ -131,25 +142,34 @@ workflow.set_entry_point("supervisor")
 app = workflow.compile()
 ```
 
-**SkillForge's Supervisor Pattern:**
+**Production Example: Code Review Supervisor**
 ```python
-# backend/app/workflows/content_analysis_workflow.py
-def supervisor_node(state: AnalysisState) -> AnalysisState:
-    """Route to next available agent."""
+# app/workflows/code_review_workflow.py
+def supervisor_node(state: CodeReviewState) -> CodeReviewState:
+    """Route to next available review agent."""
     completed = set(state["agents_completed"])
-    available_agents = [a for a in ALL_AGENTS if a not in completed]
+    available_agents = [a for a in ALL_REVIEW_AGENTS if a not in completed]
 
     if not available_agents:
         state["next"] = "quality_gate"
     else:
-        # Round-robin or priority-based routing
+        # Priority-based routing (security first, then performance, etc.)
         state["next"] = available_agents[0]
 
     return state
 
-# 8 specialist agents
-for agent_name in ["security", "tech", "implementation", ...]:
-    workflow.add_node(agent_name, create_agent_node(agent_name))
+# Specialist review agents
+REVIEW_AGENTS = [
+    "security_scanner",      # OWASP Top 10, CVE detection
+    "performance_analyzer",  # N+1 queries, algorithmic complexity
+    "style_checker",         # ESLint, Prettier, PEP8
+    "test_coverage",         # Missing tests, assertions
+    "documentation_review",  # Docstrings, READMEs
+    "dependency_audit"       # Outdated libs, license compliance
+]
+
+for agent_name in REVIEW_AGENTS:
+    workflow.add_node(agent_name, create_review_agent(agent_name))
     workflow.add_edge(agent_name, "supervisor")  # Return to supervisor
 ```
 
@@ -185,7 +205,7 @@ workflow.add_conditional_edges(
 )
 ```
 
-**SkillForge Example: Quality Gate**
+**this project Example: Quality Gate**
 ```python
 def route_after_quality_gate(state: AnalysisState) -> str:
     """Route based on quality gate result."""
@@ -249,7 +269,7 @@ config = {"configurable": {"thread_id": "analysis-123"}}
 result = app.invoke(None, config=config)  # Resumes from last checkpoint
 ```
 
-**SkillForge Checkpointing:**
+**this project Checkpointing:**
 ```python
 # backend/app/workflows/checkpoints.py
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -351,7 +371,7 @@ def security_agent_node(state: AnalysisState):
 
 ---
 
-## SkillForge's 8-Agent Analysis Pipeline
+## this project's 8-Agent Analysis Pipeline
 
 **Architecture:**
 ```
@@ -613,7 +633,7 @@ result = app.invoke({"url": url})
 - [StateGraph API](https://langchain-ai.github.io/langgraph/reference/graphs/)
 - [Checkpointing Guide](https://langchain-ai.github.io/langgraph/how-tos/persistence/)
 
-### SkillForge Examples
+### this project Examples
 - `backend/app/workflows/content_analysis_workflow.py` - Main analysis pipeline
 - `backend/app/workflows/nodes/` - Individual agent nodes
 - `backend/app/workflows/state.py` - State schema definitions
@@ -626,4 +646,4 @@ result = app.invoke({"url": url})
 ---
 
 **Version:** 1.0.0 (December 2025)
-**Status:** Production-ready patterns from SkillForge's multi-agent pipeline
+**Status:** Production-ready patterns from this project's multi-agent pipeline

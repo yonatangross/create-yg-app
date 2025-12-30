@@ -10,6 +10,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.core.config import get_settings
 from app.main import app
+from app.middleware.rate_limit import limiter
 
 
 @pytest.fixture(scope="session")
@@ -18,6 +19,18 @@ def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """Reset rate limiter state before each test.
+
+    This prevents rate limit errors when running multiple tests
+    that hit the same endpoints.
+    """
+    # Reset the limiter's internal storage
+    limiter.reset()
+    yield
 
 
 @pytest.fixture

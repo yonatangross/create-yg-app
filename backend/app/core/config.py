@@ -55,6 +55,7 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str | None = Field(default=None)
+    DATABASE_QUERY_TIMEOUT: int = Field(default=30000)  # milliseconds (30 seconds)
 
     # Redis Connection
     REDIS_URL: str = Field(default="redis://localhost:6390")
@@ -89,6 +90,13 @@ class Settings(BaseSettings):
     LANGFUSE_HOST: str = Field(default="http://localhost:3010")
     LANGFUSE_PUBLIC_KEY: str | None = Field(default=None)
     LANGFUSE_SECRET_KEY: str | None = Field(default=None)
+
+    # Admin API - IMPORTANT: Set strong key in production
+    # Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"
+    ADMIN_API_KEY: str | None = Field(
+        default=None,
+        description="Admin API key (required in production, optional in development)",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

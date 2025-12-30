@@ -33,5 +33,10 @@ class AgentState(TypedDict, total=False):
     # that should influence the agent's behavior and responses
     proactive_context: str
 
+    # Conversation summary from compaction
+    # This is a compressed version of older messages in the conversation,
+    # used to maintain context continuity while saving tokens
+    conversation_summary: str
+
     # Output
     response: str

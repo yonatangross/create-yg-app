@@ -1,8 +1,8 @@
 {
   "$schema": "../../schemas/skill-capabilities.schema.json",
   "name": "performance-optimization",
-  "version": "1.0.0",
-  "description": "Full-stack performance analysis, optimization patterns, caching strategies, and profiling with real-world SkillForge examples",
+  "version": "1.2.0",
+  "description": "Full-stack performance analysis, optimization patterns, caching strategies, and profiling with real-world production examples",
 
   "capabilities": {
     "database-optimization": {
@@ -65,7 +65,7 @@
         "How do I cache LLM responses by similarity?",
         "Implement vector-based semantic cache",
         "Reduce LLM costs by 70-95%",
-        "Real-world SkillForge semantic cache"
+        "Real-world semantic cache implementation"
       ],
       "reference_file": "SKILL.md#semantic-cache-vector-search",
       "token_cost": 170
@@ -131,7 +131,7 @@
         "How do I optimize hybrid search retrieval?",
         "Tune RRF fetch multiplier for better coverage",
         "Boost search results by metadata",
-        "Real-world SkillForge retrieval improvements"
+        "Real-world e-commerce search optimization"
       ],
       "example_file": "SKILL.md#example-1-hybrid-search-optimization",
       "token_cost": 200
@@ -153,7 +153,7 @@
         "How do I choose HNSW vs IVFFlat?",
         "Optimize vector search query time",
         "Trade-off: indexing speed vs query speed",
-        "Real-world SkillForge benchmark results"
+        "Real-world vector search benchmarks"
       ],
       "example_file": "SKILL.md#example-3-vector-index-selection",
       "token_cost": 170
@@ -164,7 +164,7 @@
         "How do I prevent SSE race conditions?",
         "Buffer events before subscriber connects",
         "Fix 'events lost' in real-time updates",
-        "Real-world SkillForge SSE debugging"
+        "Real-world SSE race condition fixes"
       ],
       "example_file": "SKILL.md#example-4-sse-event-buffering",
       "token_cost": 160
@@ -215,7 +215,7 @@
       "use_when": "Need specific optimization (e.g., N+1 fixes, caching patterns)"
     },
     "tier_4_examples": {
-      "files": "SKILL.md#real-world-skillforge-examples",
+      "files": "SKILL.md#real-world-project-examples",
       "tokens": "160-200 each",
       "use_when": "Ready to implement with proven patterns"
     }
@@ -223,7 +223,7 @@
 
   "mcp_tools": {
     "database_analysis": {
-      "tool": "skillforge-postgres-dev",
+      "tool": "postgres-mcp",
       "use_when": "Query analysis and EXPLAIN ANALYZE needed"
     },
     "browser_testing": {

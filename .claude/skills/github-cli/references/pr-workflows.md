@@ -19,7 +19,7 @@ gh pr create \
   --head feature/pgvector-search
 ```
 
-### Full PR Creation (SkillForge Pattern)
+### Full PR Creation (this project Pattern)
 
 ```bash
 gh pr create \
@@ -36,7 +36,7 @@ gh pr create \
 - `backend/tests/unit/services/` - Langfuse unit tests
 
 ## Test Plan
-- [ ] Unit tests pass (`poetry run pytest tests/unit/`)
+- [ ] Unit tests pass (`uv run pytest tests/unit/`)
 - [ ] Integration test with real Langfuse instance
 - [ ] Verify traces appear in Langfuse UI
 

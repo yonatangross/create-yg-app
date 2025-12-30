@@ -1,10 +1,15 @@
 """
-SkillForge-style content analysis workflow template.
+Multi-agent content analysis workflow template.
 
 8-agent pipeline with supervisor coordination, quality gate, and compression.
 
 Architecture:
     Content → Supervisor → 8 Specialist Agents → Quality Gate → Compress → Artifact
+
+Use Cases:
+    - Document analysis (security audits, code reviews, content evaluation)
+    - Research synthesis (tech comparison, best practices extraction)
+    - Knowledge extraction (tutorials, implementation guides, prerequisites)
 """
 
 from typing import TypedDict, Annotated, Literal

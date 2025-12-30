@@ -4,6 +4,8 @@ import pytest
 
 from app.llm.factory import LLMFactory
 
+pytestmark = pytest.mark.unit
+
 
 class TestLLMFactory:
     """Tests for LLMFactory.

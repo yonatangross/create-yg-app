@@ -86,6 +86,9 @@ select = [
 ignore = [
     "S101",     # assert usage (ok in tests)
     "B008",     # function call in argument defaults (FastAPI pattern)
+    "ARG001",   # unused function arguments (ok for interface implementation)
+    "ARG002",   # unused method arguments (ok for interface implementation)
+    "E501",     # line too long (ok for long strings)
 ]
 
 [tool.ruff.lint.isort]
@@ -99,6 +102,13 @@ addopts = "-v --tb=short"
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
+markers = [
+    "unit: Fast, isolated unit tests with all external I/O mocked",
+    "integration: Integration tests that may use real services (Redis, DB, etc)",
+    "slow: Tests that take >1 second to run",
+    "requires_redis: Tests that require real Redis connection",
+    "requires_db: Tests that require real database connection",
+]
 
 [tool.coverage.run]
 source = ["app"]
@@ -110,4 +120,9 @@ exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
+]
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.0.0",
 ]

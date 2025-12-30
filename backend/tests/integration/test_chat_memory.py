@@ -33,7 +33,7 @@ class TestChatMemoryIntegration:
         mock.ainvoke = mock_ainvoke
 
         # For streaming, yield events
-        async def mock_astream_events(state, version):
+        async def mock_astream_events(state, _version):
             query = state.get("query", "")
             messages = state.get("messages", [])
 
@@ -73,9 +73,7 @@ class TestChatMemoryIntegration:
         """Test that chat endpoint loads history from Redis."""
         with (
             patch("app.api.v1.chat.get_agent", return_value=mock_agent),
-            patch(
-                "app.api.v1.chat.get_chat_history", return_value=mock_chat_history
-            ),
+            patch("app.api.v1.chat.get_chat_history", return_value=mock_chat_history),
             patch("app.api.v1.chat.get_session") as mock_get_session,
         ):
             # Setup session context manager
@@ -84,9 +82,7 @@ class TestChatMemoryIntegration:
             mock_session.__aexit__ = AsyncMock(return_value=None)
             mock_get_session.return_value = mock_session
 
-            with patch(
-                "app.api.v1.chat.MemoryService", return_value=mock_memory_service
-            ):
+            with patch("app.api.v1.chat.MemoryService", return_value=mock_memory_service):
                 async with AsyncClient(
                     transport=ASGITransport(app=app),
                     base_url="http://test",
@@ -106,9 +102,7 @@ class TestChatMemoryIntegration:
         """Test that chat endpoint saves messages to Redis."""
         with (
             patch("app.api.v1.chat.get_agent", return_value=mock_agent),
-            patch(
-                "app.api.v1.chat.get_chat_history", return_value=mock_chat_history
-            ),
+            patch("app.api.v1.chat.get_chat_history", return_value=mock_chat_history),
             patch("app.api.v1.chat.get_session") as mock_get_session,
         ):
             mock_session = MagicMock()
@@ -116,9 +110,7 @@ class TestChatMemoryIntegration:
             mock_session.__aexit__ = AsyncMock(return_value=None)
             mock_get_session.return_value = mock_session
 
-            with patch(
-                "app.api.v1.chat.MemoryService", return_value=mock_memory_service
-            ):
+            with patch("app.api.v1.chat.MemoryService", return_value=mock_memory_service):
                 async with AsyncClient(
                     transport=ASGITransport(app=app),
                     base_url="http://test",
@@ -140,9 +132,7 @@ class TestChatMemoryIntegration:
         """Test that chat endpoint calls proactive recall."""
         with (
             patch("app.api.v1.chat.get_agent", return_value=mock_agent),
-            patch(
-                "app.api.v1.chat.get_chat_history", return_value=mock_chat_history
-            ),
+            patch("app.api.v1.chat.get_chat_history", return_value=mock_chat_history),
             patch("app.api.v1.chat.get_session") as mock_get_session,
         ):
             mock_session = MagicMock()
@@ -150,9 +140,7 @@ class TestChatMemoryIntegration:
             mock_session.__aexit__ = AsyncMock(return_value=None)
             mock_get_session.return_value = mock_session
 
-            with patch(
-                "app.api.v1.chat.MemoryService", return_value=mock_memory_service
-            ):
+            with patch("app.api.v1.chat.MemoryService", return_value=mock_memory_service):
                 async with AsyncClient(
                     transport=ASGITransport(app=app),
                     base_url="http://test",
@@ -162,9 +150,7 @@ class TestChatMemoryIntegration:
                         json={"message": "What do I like?"},
                     )
 
-                    mock_memory_service.proactive_recall.assert_called_once_with(
-                        "What do I like?"
-                    )
+                    mock_memory_service.proactive_recall.assert_called_once_with("What do I like?")
 
     @pytest.mark.asyncio
     async def test_chat_applies_sliding_window(
@@ -175,17 +161,16 @@ class TestChatMemoryIntegration:
 
         # Create history with more than MAX_CONTEXT_MESSAGES
         long_history = [
-            HumanMessage(content=f"Message {i}") if i % 2 == 0
+            HumanMessage(content=f"Message {i}")
+            if i % 2 == 0
             else AIMessage(content=f"Response {i}")
             for i in range(30)
         ]
         mock_chat_history.aget_messages = AsyncMock(return_value=long_history)
 
         with (
-            patch("app.api.v1.chat.get_agent", return_value=mock_agent) as agent_patch,
-            patch(
-                "app.api.v1.chat.get_chat_history", return_value=mock_chat_history
-            ),
+            patch("app.api.v1.chat.get_agent", return_value=mock_agent),
+            patch("app.api.v1.chat.get_chat_history", return_value=mock_chat_history),
             patch("app.api.v1.chat.get_session") as mock_get_session,
         ):
             mock_session = MagicMock()
@@ -193,9 +178,7 @@ class TestChatMemoryIntegration:
             mock_session.__aexit__ = AsyncMock(return_value=None)
             mock_get_session.return_value = mock_session
 
-            with patch(
-                "app.api.v1.chat.MemoryService", return_value=mock_memory_service
-            ):
+            with patch("app.api.v1.chat.MemoryService", return_value=mock_memory_service):
                 async with AsyncClient(
                     transport=ASGITransport(app=app),
                     base_url="http://test",
@@ -226,9 +209,7 @@ class TestChatMemoryIntegration:
             mock_session.__aexit__ = AsyncMock(return_value=None)
             mock_get_session.return_value = mock_session
 
-            with patch(
-                "app.api.v1.chat.MemoryService", return_value=mock_memory_service
-            ):
+            with patch("app.api.v1.chat.MemoryService", return_value=mock_memory_service):
                 async with AsyncClient(
                     transport=ASGITransport(app=app),
                     base_url="http://test",
@@ -250,9 +231,7 @@ class TestChatMemoryIntegration:
         """Test chat response structure."""
         with (
             patch("app.api.v1.chat.get_agent", return_value=mock_agent),
-            patch(
-                "app.api.v1.chat.get_chat_history", return_value=mock_chat_history
-            ),
+            patch("app.api.v1.chat.get_chat_history", return_value=mock_chat_history),
             patch("app.api.v1.chat.get_session") as mock_get_session,
         ):
             mock_session = MagicMock()
@@ -260,9 +239,7 @@ class TestChatMemoryIntegration:
             mock_session.__aexit__ = AsyncMock(return_value=None)
             mock_get_session.return_value = mock_session
 
-            with patch(
-                "app.api.v1.chat.MemoryService", return_value=mock_memory_service
-            ):
+            with patch("app.api.v1.chat.MemoryService", return_value=mock_memory_service):
                 async with AsyncClient(
                     transport=ASGITransport(app=app),
                     base_url="http://test",

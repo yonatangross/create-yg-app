@@ -18,7 +18,7 @@ gh alias set myprs 'pr list --author @me --state open'
 gh alias set co --shell 'id="$(gh pr list -L100 | fzf | cut -f1)"; [ -n "$id" ] && gh pr checkout "$id"'
 ```
 
-### Useful SkillForge Aliases
+### Useful this project Aliases
 
 ```bash
 # Create feature branch from issue
@@ -216,7 +216,7 @@ validate_repo() {
 }
 
 # Usage
-validate_repo "ArieGoldkin" "SkillForge" || exit 1
+validate_repo "ArieGoldkin" "this project" || exit 1
 ```
 
 ### Verify Branch Exists
@@ -292,7 +292,7 @@ gh_logged pr create --title "..." --body "..."
 
 ```bash
 #!/bin/bash
-# skillforge-feature.sh - Complete feature workflow
+# project-feature.sh - Complete feature workflow
 
 set -e
 
@@ -306,7 +306,7 @@ if [[ -z "$TITLE" ]]; then
 fi
 
 # Configuration
-REPO="ArieGoldkin/SkillForge"
+REPO="ArieGoldkin/this project"
 PROJECT_NUMBER=1
 PROJECT_OWNER="yonatangross"
 
@@ -359,7 +359,7 @@ echo "  gh pr create --base dev --fill"
 export GH_TOKEN="ghp_xxxx"
 
 # Default repo
-export GH_REPO="ArieGoldkin/SkillForge"
+export GH_REPO="ArieGoldkin/this project"
 
 # Preferred editor
 export GH_EDITOR="code --wait"

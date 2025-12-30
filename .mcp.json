@@ -11,6 +11,22 @@
     "context7": {
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp@latest"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    },
+    "postgres-mcp": {
+      "command": "npx",
+      "args": ["-y", "@crystaldba/postgres-mcp@latest"],
+      "env": {
+        "DATABASE_URL": "postgresql://dev:password@localhost:5447/yg-starter",
+        "PG_MCP_MODE": "restricted"
+      }
+    },
+    "pg-aiguide": {
+      "type": "http",
+      "url": "https://mcp.tigerdata.com/docs"
     }
   }
 }

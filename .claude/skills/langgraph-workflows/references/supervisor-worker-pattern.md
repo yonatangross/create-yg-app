@@ -73,7 +73,7 @@ app = workflow.compile()
 
 ---
 
-## SkillForge's 8-Agent Supervisor
+## this project's 8-Agent Supervisor
 
 ```python
 # backend/app/workflows/nodes/supervisor_node.py
@@ -152,7 +152,7 @@ workflow.set_entry_point("supervisor")
 
 ## Routing Strategies
 
-### Strategy 1: Round-Robin (SkillForge)
+### Strategy 1: Round-Robin (this project)
 
 ```python
 def supervisor(state):
@@ -467,4 +467,4 @@ def test_supervisor_handles_failures():
 
 - [LangGraph Multi-Agent Systems](https://langchain-ai.github.io/langgraph/tutorials/multi_agent/)
 - [Supervisor Pattern Tutorial](https://langchain-ai.github.io/langgraph/tutorials/multi_agent/agent_supervisor/)
-- SkillForge: `backend/app/workflows/nodes/supervisor_node.py`
+- this project: `backend/app/workflows/nodes/supervisor_node.py`

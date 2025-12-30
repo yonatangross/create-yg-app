@@ -65,7 +65,7 @@ ALTER TABLE analyses
 ALTER COLUMN content_summary SET DEFAULT '';
 ```
 
-### Real-World Example: SkillForge's PII Columns
+### Real-World Example: this project's PII Columns
 
 **Migration:** `20251210_add_pii_columns.py`
 
@@ -165,7 +165,7 @@ def upgrade() -> None:
     """))
 
 # Step 3: Backfill old rows (background script, not migration)
-# Run: poetry run python scripts/backfill_chunks_tsvector.py
+# Run: uv run python scripts/backfill_chunks_tsvector.py
 async def backfill_tsvector():
     batch_size = 5000
     total_backfilled = 0
@@ -193,7 +193,7 @@ async def backfill_tsvector():
             print(f"Backfilled {total_backfilled} total rows")
 ```
 
-**SkillForge Migration:** `20251218_backfill_chunks_tsvector.py` (actual example)
+**this project Migration:** `20251218_backfill_chunks_tsvector.py` (actual example)
 
 ---
 
@@ -246,13 +246,13 @@ Always test both upgrade and downgrade paths:
 
 ```bash
 # Apply migration
-poetry run alembic upgrade head
+uv run alembic upgrade head
 
 # Test rollback
-poetry run alembic downgrade -1
+uv run alembic downgrade -1
 
 # Re-apply
-poetry run alembic upgrade head
+uv run alembic upgrade head
 ```
 
 ---
@@ -260,7 +260,7 @@ poetry run alembic upgrade head
 ## Alembic Best Practices
 
 ### Migration File Naming
-SkillForge uses timestamp-based naming for clarity:
+this project uses timestamp-based naming for clarity:
 
 ```
 20251210_harden_embedding_pipeline.py
@@ -327,10 +327,10 @@ For large tables, create indexes separately (not in transaction):
 
 ```bash
 # Migration creates table without index
-poetry run alembic upgrade head
+uv run alembic upgrade head
 
 # Manually create index CONCURRENTLY (no locks)
-psql -d skillforge -c "CREATE INDEX CONCURRENTLY idx_chunks_vector_hnsw ON analysis_chunks USING hnsw (vector vector_cosine_ops) WITH (m = 16, ef_construction = 64);"
+psql -d project -c "CREATE INDEX CONCURRENTLY idx_chunks_vector_hnsw ON analysis_chunks USING hnsw (vector vector_cosine_ops) WITH (m = 16, ef_construction = 64);"
 ```
 
 **Why?** `CREATE INDEX CONCURRENTLY` cannot run inside transaction blocks (Alembic uses transactions by default).
@@ -356,7 +356,7 @@ def upgrade() -> None:
     """))
 ```
 
-**SkillForge Example:** `20251210_add_cascade_delete.py`
+**this project Example:** `20251210_add_cascade_delete.py`
 
 ```python
 def upgrade() -> None:
@@ -408,14 +408,14 @@ Handle branching with merge migrations:
 # branch-b: revision = "def789", down_revision = "xyz456"
 
 # Create merge migration
-poetry run alembic merge -m "merge sprint 12 migrations" abc123 def789
+uv run alembic merge -m "merge sprint 12 migrations" abc123 def789
 
 # Generates:
 # revision = "merge123"
 # down_revision = ("abc123", "def789")
 ```
 
-**SkillForge Example:** `500313d1cac9_merge_sprint_12_migrations.py`
+**this project Example:** `500313d1cac9_merge_sprint_12_migrations.py`
 
 ---
 

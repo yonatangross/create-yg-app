@@ -224,4 +224,4 @@ Use this checklist when designing or reviewing database schemas.
 
 **Checklist Version**: 1.0.0
 **Skill**: database-schema-designer v1.0.0
-**Last Updated**: 2025-10-31
+**Last Updated**: December 2025

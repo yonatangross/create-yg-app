@@ -83,6 +83,6 @@
 
 ## References
 
-- [GitHub Issue #{{ISSUE_NUM}}](https://github.com/ArieGoldkin/SkillForge/issues/{{ISSUE_NUM}})
+- [GitHub Issue #{{ISSUE_NUM}}](https://github.com/ArieGoldkin/this project/issues/{{ISSUE_NUM}})
 - <Link to relevant docs>
 - <Link to related PRs>

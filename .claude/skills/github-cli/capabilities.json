@@ -2,7 +2,7 @@
   "$schema": "../../schemas/skill-capabilities.schema.json",
   "name": "github-cli",
   "version": "1.0.0",
-  "description": "GitHub CLI (gh) mastery for issues, PRs, Projects v2, and automation. Source of truth for SkillForge development workflow.",
+  "description": "GitHub CLI (gh) mastery for issues, PRs, Projects v2, and automation. Modern development workflow patterns for 2025.",
 
   "capabilities": {
     "issue-management": {
@@ -36,7 +36,7 @@
         "Query project items"
       ],
       "reference_file": "references/projects-v2.md",
-      "template_file": "templates/skillforge-project-config.json",
+      "template_file": "templates/project-project-config.json",
       "token_cost": 350
     },
     "graphql-api": {
@@ -62,16 +62,16 @@
       "template_file": "scripts/gh-helpers.sh",
       "token_cost": 220
     },
-    "skillforge-workflow": {
-      "keywords": ["SkillForge", "feature branch", "conventional commits", "PR template", "dev branch"],
+    "modern-workflow": {
+      "keywords": ["workflow", "feature branch", "conventional commits", "PR template", "trunk based"],
       "solves": [
-        "SkillForge branch naming convention",
-        "Create issue and feature branch",
-        "SkillForge PR workflow",
-        "Project field IDs for SkillForge"
+        "Modern branch naming conventions",
+        "Create issue and feature branch workflow",
+        "Conventional commit message format",
+        "Example project field IDs for Projects v2"
       ],
-      "reference_file": "SKILL.md#skillforge-workflow",
-      "template_file": "templates/skillforge-project-config.json",
+      "reference_file": "SKILL.md#modern-workflow-2025",
+      "template_file": "templates/project-config-example.json",
       "token_cost": 150
     }
   },
@@ -92,7 +92,7 @@
     "tier_2_overview": {
       "file": "SKILL.md",
       "tokens": 600,
-      "sections": ["quick-reference", "skillforge-workflow"],
+      "sections": ["quick-reference", "modern-workflow"],
       "use_when": "Skill confirmed relevant - need quick reference and workflow conventions"
     },
     "tier_3_specific": {
@@ -103,7 +103,7 @@
     "tier_4_generate": {
       "files": "templates/*.json, scripts/*.sh",
       "tokens": "150-250 each",
-      "use_when": "Ready to generate SkillForge project config or automation scripts"
+      "use_when": "Ready to generate project config or automation scripts"
     }
   },
 

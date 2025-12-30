@@ -104,15 +104,15 @@
       "reference_file": "SKILL.md#debugging-langgraph-workflows",
       "token_cost": 90
     },
-    "skillforge-pipeline": {
-      "keywords": ["skillforge", "8-agent", "content analysis", "multi-agent pipeline"],
+    "project-pipeline": {
+      "keywords": ["project", "8-agent", "content analysis", "multi-agent pipeline"],
       "solves": [
-        "How does SkillForge's workflow work?",
+        "How does this project's workflow work?",
         "8-agent analysis pipeline architecture",
         "Real-world multi-agent example",
         "Production workflow patterns"
       ],
-      "example_file": "SKILL.md#skillforges-8-agent-analysis-pipeline",
+      "example_file": "SKILL.md#projects-8-agent-analysis-pipeline",
       "token_cost": 200
     },
     "langchain-migration": {

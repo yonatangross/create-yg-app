@@ -1,8 +1,8 @@
 ---
 name: langfuse-observability
-description: LLM observability with self-hosted Langfuse - tracing, evaluation, monitoring, prompt management, and cost tracking
-version: 1.0.0
-author: SkillForge AI Agent Hub
+description: LLM observability with self-hosted Langfuse 3.x - tracing, evaluation, monitoring, prompt management, and cost tracking
+version: 2.0.0
+author: YG Starter Template
 tags: [langfuse, llm, observability, tracing, evaluation, prompts, 2025]
 ---
 
@@ -10,20 +10,22 @@ tags: [langfuse, llm, observability, tracing, evaluation, prompts, 2025]
 
 ## Overview
 
-**Langfuse** is the open-source LLM observability platform that SkillForge uses for tracing, monitoring, evaluation, and prompt management. Unlike LangSmith (deprecated), Langfuse is self-hosted, free, and designed for production LLM applications.
+**Langfuse 3.x** is the open-source LLM observability platform for tracing, monitoring, evaluation, and prompt management. Unlike LangSmith (proprietary), Langfuse is self-hosted, free, and designed for production LLM applications.
 
 **When to use this skill:**
 - Setting up LLM observability from scratch
 - Debugging slow or incorrect LLM responses
-- Tracking token usage and costs
-- Managing prompts in production
-- Evaluating LLM output quality
+- Tracking token usage and costs per agent/user/session
+- Managing prompts in production with versioning
+- Evaluating LLM output quality with automated scoring
 - Migrating from LangSmith to Langfuse
 
-**SkillForge Integration:**
-- **Status**: ✅ Migrated from LangSmith (Dec 2025)
-- **Location**: `backend/app/shared/services/langfuse/`
-- **MCP Server**: `skillforge-langfuse` (optional)
+**Real-World Use Cases:**
+- **Multi-Agent Cost Attribution**: Track costs by agent type (security, coding, general)
+- **Prompt A/B Testing**: Compare prompt versions with quality scores
+- **Quality Monitoring**: Automated scoring for relevance, coherence, factuality
+- **Dataset Evaluation**: Regression testing with golden datasets
+- **Session Analytics**: Group traces by user session for journey analysis
 
 ---
 
@@ -134,7 +136,7 @@ Version control for prompts in production:
 
 ```python
 # Fetch prompt from Langfuse
-from langfuse import Langfuse
+from langfuse import Langfuse, get_client
 
 langfuse = Langfuse()
 
@@ -148,13 +150,51 @@ response = await llm.generate(
         {"role": "user", "content": user_input}
     ]
 )
-
-# Link prompt to trace
-langfuse.trace(
-    name="security_analysis",
-    metadata={"prompt_version": prompt.version}
-)
 ```
+
+#### Linking Prompts to Generations (Issue #564 Pattern)
+
+**CRITICAL:** To make the "Number of Observations" counter work in Langfuse Prompts UI, you MUST link the `TextPromptClient` object to the generation span:
+
+```python
+from langfuse import get_client
+
+# Method 1: update_current_generation (preferred in this project)
+langfuse = get_client()
+prompt = langfuse.get_prompt("security_auditor", label="production")
+
+# Link prompt to current generation span
+langfuse.update_current_generation(prompt=prompt)
+
+# Method 2: Pass prompt when starting generation
+with langfuse.start_as_current_generation(
+    name="security-analysis",
+    model="claude-sonnet-4-20250514",
+    prompt=prompt  # Links automatically!
+) as generation:
+    response = await llm.generate(...)
+    generation.update(output=response)
+```
+
+**this project Pattern (with caching):**
+```python
+# PromptManager returns both content AND TextPromptClient
+prompt_content, prompt_client = await prompt_manager.get_prompt_with_langfuse_client(
+    name="analysis-agent-security-auditor",
+    variables={"skill_instructions": "..."},
+    label="production",
+)
+
+# Pass prompt_client through agent metadata
+if prompt_client:
+    agent = agent.with_config(metadata={"langfuse_prompt_client": prompt_client})
+
+# In invoke_agent(), link prompt to generation
+if prompt_client:
+    langfuse.update_current_generation(prompt=prompt_client)
+```
+
+**Note:** Cache hits (L1/L2) return `None` for `prompt_client` - linkage only happens on L3 Langfuse fetches (~5% of calls). This is acceptable for analytics.
 
 **Prompt Versioning in UI:**
 ```
@@ -254,7 +294,7 @@ langfuse.trace(
         "agent_count": 8,
         "total_cost_usd": 0.15
     },
-    tags=["production", "skillforge", "security"]
+    tags=["production", "project", "security"]
 )
 ```
 
@@ -266,7 +306,7 @@ langfuse.trace(
 
 ---
 
-## SkillForge Integration
+## this project Integration
 
 ### Setup (Already Complete)
 
@@ -489,7 +529,7 @@ ORDER BY date;
 - [Decorators Guide](https://langfuse.com/docs/sdk/python/decorators)
 - [Prompt Management](https://langfuse.com/docs/prompts)
 - [Self-Hosting](https://langfuse.com/docs/deployment/self-host)
-- [SkillForge Integration](https://github.com/yonatan-gross/SkillForge#langfuse-observability)
+- [this project Integration](https://github.com/yonatan-gross/this project#langfuse-observability)
 
 ---
 

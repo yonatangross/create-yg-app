@@ -1,8 +1,10 @@
 """LangGraph workflow definition."""
 
 from functools import lru_cache
+from typing import Any
 
 from langgraph.graph import END, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 from app.agent.nodes.generate import generate_node
 from app.agent.nodes.retrieve import retrieve_node
@@ -13,7 +15,7 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 
-def create_agent_graph() -> StateGraph:
+def create_agent_graph() -> CompiledStateGraph[Any, Any, Any, Any]:
     """Create the agent workflow graph.
 
     The graph implements a simple RAG pattern:
@@ -25,7 +27,7 @@ def create_agent_graph() -> StateGraph:
         Compiled LangGraph workflow.
     """
     # Create the graph
-    graph = StateGraph(AgentState)
+    graph = StateGraph(AgentState)  # type: ignore[type-var]
 
     # Add nodes
     graph.add_node("retrieve", retrieve_node)

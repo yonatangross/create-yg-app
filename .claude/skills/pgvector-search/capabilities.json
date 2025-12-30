@@ -180,7 +180,7 @@
       "use_when": "Need specific implementation (e.g., RRF algorithm, indexing)"
     },
     "tier_4_implementation": {
-      "files": "SKILL.md#skillforge-hybrid-search-implementation",
+      "files": "SKILL.md#project-hybrid-search-implementation",
       "tokens": "200+ each",
       "use_when": "Ready to implement with complete code examples"
     }
@@ -193,7 +193,7 @@
       "use_when": "Need current PGVector API documentation"
     },
     "database_testing": {
-      "tool": "skillforge-postgres-dev",
+      "tool": "postgres-mcp",
       "use_when": "Testing search queries and performance"
     }
   }

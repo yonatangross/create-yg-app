@@ -79,7 +79,7 @@ def robust_traceable(
                                 update_kwargs["metadata"] = metadata
                             if update_kwargs:
                                 langfuse.update_current_trace(**update_kwargs)
-                    except Exception:
+                    except Exception:  # noqa: S110 - tracing should never break the app
                         pass
 
                     return await observed_func(*args, **kwargs)
@@ -122,7 +122,7 @@ def update_current_trace(
 
     except ImportError:
         pass
-    except Exception:
+    except Exception:  # noqa: S110 - tracing should never break the app
         pass
 
 
@@ -183,7 +183,7 @@ def traced_tool(
                             update_kwargs["metadata"] = metadata
                         if update_kwargs:
                             langfuse.update_current_span(**update_kwargs)
-                    except Exception:
+                    except Exception:  # noqa: S110 - tracing should never break the app
                         pass
 
                     return await observed_func(*args, **kwargs)
@@ -226,5 +226,5 @@ def update_current_observation(
 
     except ImportError:
         pass
-    except Exception:
+    except Exception:  # noqa: S110 - tracing should never break the app
         pass

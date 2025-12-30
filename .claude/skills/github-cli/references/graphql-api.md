@@ -18,7 +18,7 @@ gh api graphql -f query='
 ```bash
 gh api graphql \
   -F owner="ArieGoldkin" \
-  -F repo="SkillForge" \
+  -F repo="this project" \
   -f query='
     query($owner: String!, $repo: String!) {
       repository(owner: $owner, name: $repo) {
@@ -53,7 +53,7 @@ gh api graphql -f query='
       pullRequests(states: OPEN) { totalCount }
     }
   }
-' -f owner="ArieGoldkin" -f repo="SkillForge"
+' -f owner="ArieGoldkin" -f repo="this project"
 ```
 
 ### Issue with Labels and Milestone
@@ -79,7 +79,7 @@ gh api graphql -f query='
       }
     }
   }
-' -f owner="ArieGoldkin" -f repo="SkillForge" -F number=372
+' -f owner="ArieGoldkin" -f repo="this project" -F number=372
 ```
 
 ### PR with Reviews and Checks
@@ -119,7 +119,7 @@ gh api graphql -f query='
       }
     }
   }
-' -f owner="ArieGoldkin" -f repo="SkillForge" -F number=389
+' -f owner="ArieGoldkin" -f repo="this project" -F number=389
 ```
 
 ---
@@ -130,7 +130,7 @@ gh api graphql -f query='
 # Use --paginate for automatic pagination
 gh api graphql --paginate \
   -F owner="ArieGoldkin" \
-  -F repo="SkillForge" \
+  -F repo="this project" \
   -f query='
     query($owner: String!, $repo: String!, $endCursor: String) {
       repository(owner: $owner, name: $repo) {
@@ -168,7 +168,7 @@ LABEL_ID=$(gh api graphql -f query='
       label(name: $name) { id }
     }
   }
-' -f owner="ArieGoldkin" -f repo="SkillForge" -f name="bug" \
+' -f owner="ArieGoldkin" -f repo="this project" -f name="bug" \
   --jq '.data.repository.label.id')
 
 # Get issue ID
@@ -178,7 +178,7 @@ ISSUE_ID=$(gh api graphql -f query='
       issue(number: $number) { id }
     }
   }
-' -f owner="ArieGoldkin" -f repo="SkillForge" -F number=123 \
+' -f owner="ArieGoldkin" -f repo="this project" -F number=123 \
   --jq '.data.repository.issue.id')
 
 # Add label
@@ -292,7 +292,7 @@ fragment IssueFields on Issue {
 }
 
 query {
-  repository(owner: "ArieGoldkin", name: "SkillForge") {
+  repository(owner: "ArieGoldkin", name: "this project") {
     issues(first: 10) {
       nodes {
         ...IssueFields
@@ -312,7 +312,7 @@ query {
 # Get all issues to update
 ISSUES=$(gh api graphql -f query='
   query {
-    repository(owner: "ArieGoldkin", name: "SkillForge") {
+    repository(owner: "ArieGoldkin", name: "this project") {
       issues(first: 50, states: OPEN, labels: ["stale"]) {
         nodes { id number }
       }
@@ -364,7 +364,7 @@ gh api graphql -f query='
       issue(number: $number) { id }
     }
   }
-' -f owner="ArieGoldkin" -f repo="SkillForge" -F number=123 \
+' -f owner="ArieGoldkin" -f repo="this project" -F number=123 \
   --jq '.data.repository.issue.id'
 
 # Repository ID
@@ -372,7 +372,7 @@ gh api graphql -f query='
   query($owner: String!, $repo: String!) {
     repository(owner: $owner, name: $repo) { id }
   }
-' -f owner="ArieGoldkin" -f repo="SkillForge" \
+' -f owner="ArieGoldkin" -f repo="this project" \
   --jq '.data.repository.id'
 
 # Label ID
@@ -382,6 +382,6 @@ gh api graphql -f query='
       label(name: $name) { id }
     }
   }
-' -f owner="ArieGoldkin" -f repo="SkillForge" -f name="bug" \
+' -f owner="ArieGoldkin" -f repo="this project" -f name="bug" \
   --jq '.data.repository.label.id'
 ```

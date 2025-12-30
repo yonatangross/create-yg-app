@@ -1,4 +1,4 @@
-# Code Quality Rules - SkillForge Backend
+# Code Quality Rules - this project Backend
 
 **Version:** 1.0
 **Enforcement:** CI/CD pipeline + pre-commit validation
@@ -13,9 +13,9 @@
 
 ```bash
 cd backend
-poetry run ruff format --check app/  # Format check (CI runs this!)
-poetry run ruff check app/           # Lint check
-poetry run ty check app/ --exclude "app/evaluation/*"  # Type check
+uv run ruff format --check app/  # Format check (CI runs this!)
+uv run ruff check app/           # Lint check
+uv run ty check app/ --exclude "app/evaluation/*"  # Type check
 ```
 
 ---
@@ -257,7 +257,7 @@ D413 Missing blank line after last section
 **Auto-fix:**
 
 ```bash
-poetry run ruff check --fix app/
+uv run ruff check --fix app/
 ```
 
 **Manual fix:**
@@ -296,7 +296,7 @@ UP035 Import from `collections.abc` instead of `typing`
 **Auto-fix:**
 
 ```bash
-poetry run ruff check --fix app/
+uv run ruff check --fix app/
 ```
 
 **Manual fix:**
@@ -322,7 +322,7 @@ F401 `module.unused_function` imported but unused
 **Auto-fix:**
 
 ```bash
-poetry run ruff check --fix app/
+uv run ruff check --fix app/
 ```
 
 **Handling re-exports in __init__.py:**
@@ -440,16 +440,16 @@ async def _retry_loop(  # noqa: PLR0913 - internal helper, params intentional
 ```bash
 # Full quality check (what CI runs)
 cd backend
-poetry run ruff format --check app/  # Format check
-poetry run ruff check app/           # Lint check
-poetry run ty check app/ --exclude "app/evaluation/*"  # Type check
+uv run ruff format --check app/  # Format check
+uv run ruff check app/           # Lint check
+uv run ty check app/ --exclude "app/evaluation/*"  # Type check
 
 # Auto-fix what can be fixed
-poetry run ruff check --fix app/
-poetry run ruff format app/
+uv run ruff check --fix app/
+uv run ruff format app/
 
 # Run tests with coverage
-poetry run pytest tests/unit/ --tb=short -v 2>&1 | tee /tmp/test_results.log
+uv run pytest tests/unit/ --tb=short -v 2>&1 | tee /tmp/test_results.log
 ```
 
 ---

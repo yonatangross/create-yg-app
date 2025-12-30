@@ -83,13 +83,13 @@ services:
       - ./backend/app:/app/app:ro
       - ./backend/alembic:/app/alembic:ro
     command: >
-      sh -c "
+      bash -c "
         echo 'Waiting for database...' &&
         until pg_isready -h postgres -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do sleep 2; done &&
         echo 'Running migrations...' &&
-        /app/.venv/bin/alembic upgrade head &&
+        /app/.venv/bin/python -c 'from alembic.config import Config; from alembic import command; config = Config(\"alembic.ini\"); command.upgrade(config, \"head\")' &&
         echo 'Starting backend...' &&
-        /app/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8600 --reload
+        /app/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8600 --reload
       "
     networks:
       - default

@@ -1,8 +1,8 @@
 {
   "$schema": "../../schemas/skill-capabilities.schema.json",
   "name": "testing-strategy-builder",
-  "version": "1.0.0",
-  "description": "Test planning templates, coverage targets, and guidance for unit, integration, E2E, and performance testing",
+  "version": "1.1.0",
+  "description": "Test planning templates, coverage targets, MSW network mocking, VCR.py HTTP recording, and guidance for unit, integration, E2E, and performance testing (2025 patterns)",
 
   "capabilities": {
     "test-planning": {
@@ -24,6 +24,32 @@
       ],
       "reference_file": "references/code-examples.md#unit-testing",
       "token_cost": 180
+    },
+    "msw-testing": {
+      "keywords": ["msw", "mock service worker", "network mocking", "http mock", "api mock", "fetch mock", "axios mock", "network level", "request handler"],
+      "solves": [
+        "How do I mock APIs in frontend tests?",
+        "MSW setup with Vitest or Jest",
+        "Network-level mocking instead of jest.mock",
+        "Mock API responses for React testing",
+        "Why not use jest.spyOn(fetch)?",
+        "Test API error handling with MSW"
+      ],
+      "reference_file": "SKILL.md#msw-mock-service-worker",
+      "token_cost": 350
+    },
+    "vcr-testing": {
+      "keywords": ["vcr", "vcrpy", "pytest-vcr", "cassette", "http recording", "record replay", "deterministic http", "python api mock"],
+      "solves": [
+        "How do I record HTTP responses for Python tests?",
+        "VCR.py setup with pytest",
+        "Deterministic API testing in Python",
+        "Record and replay HTTP interactions",
+        "Test external APIs without live calls",
+        "Mock LLM API responses in tests"
+      ],
+      "reference_file": "SKILL.md#vcrpy-python-http-recording",
+      "token_cost": 300
     },
     "integration-testing": {
       "keywords": ["integration test", "api test", "database test", "service test"],
@@ -68,8 +94,8 @@
   },
 
   "triggers": {
-    "high_confidence": ["test.*strategy", "testing.*plan", "coverage.*target", "e2e.*test"],
-    "medium_confidence": ["write.*test", "add.*test", "test.*this"]
+    "high_confidence": ["test.*strategy", "testing.*plan", "coverage.*target", "e2e.*test", "msw", "mock.*service.*worker", "vcr", "vcrpy", "cassette"],
+    "medium_confidence": ["write.*test", "add.*test", "test.*this", "mock.*api", "network.*mock", "http.*record"]
   },
 
   "integrates_with": ["code-review-playbook", "evidence-verification"],

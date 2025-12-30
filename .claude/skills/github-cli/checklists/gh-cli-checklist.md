@@ -1,6 +1,6 @@
 # GitHub CLI Checklist
 
-Quick reference checklist for common GitHub CLI operations in SkillForge development.
+Quick reference checklist for common GitHub CLI operations in this project development.
 
 ---
 
@@ -15,10 +15,10 @@ Quick reference checklist for common GitHub CLI operations in SkillForge develop
 
 # 2. Run Backend Checks (if Python changes)
 [ ] cd backend
-[ ] poetry run ruff format --check app/    # Format check
-[ ] poetry run ruff check app/             # Lint check
-[ ] poetry run ty check app/ --exclude "app/evaluation/*"  # Type check
-[ ] poetry run pytest tests/unit/ -v      # Unit tests
+[ ] uv run ruff format --check app/    # Format check
+[ ] uv run ruff check app/             # Lint check
+[ ] uv run ty check app/ --exclude "app/evaluation/*"  # Type check
+[ ] uv run pytest tests/unit/ -v      # Unit tests
 
 # 3. Run Frontend Checks (if TypeScript/React changes)
 [ ] cd frontend
@@ -155,7 +155,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 [ ] ... make minimal changes to fix issue ...
 
 # 4. Test Thoroughly
-[ ] poetry run pytest tests/unit/ tests/integration/ -v
+[ ] uv run pytest tests/unit/ tests/integration/ -v
 [ ] Manual testing in production-like environment
 
 # 5. Commit and Push
@@ -281,12 +281,12 @@ None (or list changes)
     → Review all file changes
 
 # 3. Run Tests Locally
-[ ] cd backend && poetry run pytest tests/unit/ -v
+[ ] cd backend && uv run pytest tests/unit/ -v
 [ ] cd frontend && npm run test
 
 # 4. Verify Pre-Commit Checks
-[ ] poetry run ruff format --check app/
-[ ] poetry run ruff check app/
+[ ] uv run ruff format --check app/
+[ ] uv run ruff check app/
 [ ] npm run lint && npm run typecheck
 
 # 5. Approve or Request Changes
@@ -392,7 +392,7 @@ None (or list changes)
 [ ] gh issue create --title "<title>" --assignee @me --label <label>
 
 # 3. Add to Project Board
-[ ] gh issue edit <issue-number> --add-project "SkillForge Sprint"
+[ ] gh issue edit <issue-number> --add-project "this project Sprint"
 
 # 4. Link Related Issues
 [ ] Add "Related to #<issue>" in issue body
@@ -471,6 +471,6 @@ gh issue status                               # My issue status
 ## References
 
 - **GitHub CLI Manual:** https://cli.github.com/manual/
-- **SkillForge Git Workflow:** See `CLAUDE.md`
+- **this project Git Workflow:** See `CLAUDE.md`
 - **Conventional Commits:** https://www.conventionalcommits.org/
-- **Example Workflow:** `.claude/skills/github-cli/examples/skillforge-gh-workflow.md`
+- **Example Workflow:** `.claude/skills/github-cli/examples/project-gh-workflow.md`

@@ -290,4 +290,4 @@ Use this checklist when designing or reviewing APIs to ensure consistency, usabi
 
 **Checklist Version**: 1.0.0
 **Skill**: api-design-framework v1.0.0
-**Last Updated**: 2025-10-31
+**Last Updated**: December 2025

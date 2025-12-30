@@ -5,8 +5,8 @@ from datetime import datetime
 from enum import Enum
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, Float, Index, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Computed, DateTime, Float, Index, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -37,6 +37,7 @@ class AgentMemory(Base):
         relevance_score: Quality metric (0-1).
         memory_metadata: Flexible JSONB for additional context.
         created_at: Timestamp of creation.
+        last_accessed_at: Timestamp of last access for relevance decay.
     """
 
     __tablename__ = "agent_memories"
@@ -76,11 +77,23 @@ class AgentMemory(Base):
         default=dict,
     )
 
+    # Full-text search vector (auto-generated from content)
+    # Used for hybrid BM25 + vector search
+    content_tsvector: Mapped[str | None] = mapped_column(
+        TSVECTOR,
+        Computed("to_tsvector('english', content)", persisted=True),
+        nullable=True,
+    )
+
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+    last_accessed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     __table_args__ = (
@@ -91,6 +104,12 @@ class AgentMemory(Base):
             postgresql_using="hnsw",
             postgresql_with={"m": 16, "ef_construction": 64},
             postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+        # GIN index for full-text search (BM25)
+        Index(
+            "ix_agent_memories_content_tsvector",
+            "content_tsvector",
+            postgresql_using="gin",
         ),
         # Composite index for filtered queries
         Index("ix_agent_memories_type_created", memory_type, created_at),

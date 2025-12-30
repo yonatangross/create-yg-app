@@ -1,6 +1,6 @@
 # Performance Audit Checklist
 
-Comprehensive guide for identifying and fixing performance bottlenecks, based on SkillForge's real optimization process.
+Comprehensive guide for identifying and fixing performance bottlenecks, based on this project's real optimization process.
 
 ## Prerequisites
 
@@ -646,7 +646,7 @@ speedup = before_latency / after_latency  # 17x
 
 ## References
 
-- Example: `../examples/skillforge-performance-wins.md`
+- Example: `../examples/project-performance-wins.md`
 - Template: `../templates/caching-patterns.ts`
 - Template: `../templates/database-optimization.ts`
 - [Chrome DevTools Performance](https://developer.chrome.com/docs/devtools/performance/)
