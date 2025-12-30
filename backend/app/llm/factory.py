@@ -21,11 +21,12 @@ logger = get_logger(__name__)
 # Provider priority for fallback (order matters)
 PROVIDER_PRIORITY = ["anthropic", "openai", "google_genai"]
 
-# Model defaults per provider
+# Model defaults per provider (Dec 2025 - Latest Models)
+# See SkillForge model_registry.py for full pricing/capabilities
 DEFAULT_MODELS: dict[str, str] = {
-    "openai": "gpt-4o-mini",
-    "anthropic": "claude-3-5-sonnet-20241022",
-    "google_genai": "gemini-1.5-flash",
+    "openai": "gpt-4o-mini",  # $0.15/$0.60 - cost-effective, reliable
+    "anthropic": "claude-sonnet-4-20250514",  # $3/$15 - SWE-bench leader (72.5%)
+    "google_genai": "gemini-2.5-flash",  # $0.30/$2.50 - 1M context, fast
 }
 
 
@@ -43,7 +44,7 @@ class LLMFactory:
         llm = LLMFactory.create()
 
         # Specific provider
-        llm = LLMFactory.create(provider="anthropic", model="claude-3-5-haiku-20241022")
+        llm = LLMFactory.create(provider="anthropic", model="claude-haiku-4-5-20251001")
 
         # With fallback on circuit breaker open
         llm = LLMFactory.create_with_fallback()

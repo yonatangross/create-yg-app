@@ -10,13 +10,13 @@ git clone https://github.com/yonatangross/yg-starter.git my-project
 cd my-project
 ./init.sh "My Project Name"
 
-# 2. Add at least one LLM API key to .env
+# 2. Add at least one LLM API key to backend/.env
 # OPENAI_API_KEY=sk-...
 # ANTHROPIC_API_KEY=sk-ant-...
 # GOOGLE_API_KEY=...
 
 # 3. Start all services
-docker compose up -d
+make dev
 
 # 4. Open the app
 open http://localhost:5183
@@ -61,10 +61,12 @@ YG Starter uses offset ports to avoid conflicts with other local projects:
 
 The initialization script:
 1. **Generates cryptographic secrets** - All passwords, JWT tokens, encryption keys
-2. **Creates .env** - From .env.example with real secrets
+2. **Creates backend/.env** - From backend/.env.example with real secrets
 3. **Renames the project** - Updates all references (yg-starter → your-project)
 4. **Resets git history** - Fresh start with initial commit
 5. **Self-destructs** - Removes itself after running
+
+Note: All environment configuration is consolidated in `backend/.env` (single source of truth).
 
 ## Development
 
