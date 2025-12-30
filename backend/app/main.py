@@ -37,6 +37,41 @@ async def lifespan(_app: FastAPI):
     logger.info("application_shutdown")
 
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Middleware to add security headers to all responses.
+
+    Adds OWASP-recommended security headers for XSS protection,
+    clickjacking prevention, and content type sniffing protection.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+
+        # Prevent MIME type sniffing
+        response.headers["X-Content-Type-Options"] = "nosniff"
+
+        # Prevent clickjacking
+        response.headers["X-Frame-Options"] = "DENY"
+
+        # Enable XSS filter in browsers (legacy but still useful)
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+
+        # Referrer policy for privacy
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+        # Permissions policy (restrict browser features)
+        response.headers["Permissions-Policy"] = (
+            "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
+            "magnetometer=(), microphone=(), payment=(), usb=()"
+        )
+
+        # HSTS for production (force HTTPS)
+        if settings.is_production():
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+        return response
+
+
 class RequestIDMiddleware(BaseHTTPMiddleware):
     """Middleware to add unique request ID to each request for tracing."""
 
@@ -94,17 +129,21 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # ty
 # Compression
 app.add_middleware(GZipMiddleware, minimum_size=1000)  # type: ignore[arg-type]
 
-# CORS
+# CORS - explicit whitelist for security
 app.add_middleware(
     CORSMiddleware,  # type: ignore[arg-type]
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID", "X-Admin-Key"],
+    max_age=600,  # Cache preflight for 10 minutes
 )
 
 # Request ID
 app.add_middleware(RequestIDMiddleware)  # type: ignore[arg-type]
+
+# Security Headers
+app.add_middleware(SecurityHeadersMiddleware)  # type: ignore[arg-type]
 
 
 # Global Exception Handler

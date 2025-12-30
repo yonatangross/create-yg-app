@@ -30,33 +30,56 @@ limiter = Limiter(key_func=get_remote_address)
 
 # --- Auth Dependency ---
 
+# Auto-generated dev admin key (generated once per process)
+_DEV_ADMIN_KEY: str | None = None
+
+
+def _get_dev_admin_key() -> str:
+    """Get or generate a temporary admin key for development mode.
+
+    Returns:
+        A randomly generated 32-character hex key
+    """
+    global _DEV_ADMIN_KEY
+    if _DEV_ADMIN_KEY is None:
+        _DEV_ADMIN_KEY = secrets.token_hex(16)
+        logger.warning(
+            "dev_admin_key_generated",
+            message="Auto-generated admin key for development. Use this in X-Admin-Key header.",
+            admin_key=_DEV_ADMIN_KEY,
+        )
+    return _DEV_ADMIN_KEY
+
 
 async def verify_admin_key(x_admin_key: Annotated[str | None, Header()] = None) -> None:
     """Verify admin API key from X-Admin-Key header.
 
-    In development mode without ADMIN_API_KEY set, any key (or no key) is accepted.
-    In production, ADMIN_API_KEY must be set and match the provided key.
+    Security: Always requires authentication, even in development mode.
+    In dev mode without ADMIN_API_KEY set, a temporary key is auto-generated
+    and logged at startup for easy access.
 
     Args:
         x_admin_key: API key from request header
 
     Raises:
         HTTPException: 403 if key is missing or invalid
+        HTTPException: 500 if key not configured in production
     """
-    # If ADMIN_API_KEY is not set
-    if not settings.ADMIN_API_KEY:
-        if settings.is_production():
-            logger.error("admin_key_not_configured_in_production")
-            raise HTTPException(
-                status_code=500,
-                detail="Admin API key not configured. Set ADMIN_API_KEY environment variable.",
-            )
-        # Development mode: allow access without key (with warning)
-        logger.warning("admin_access_without_key_dev_mode")
-        return
+    # Determine the expected key
+    if settings.ADMIN_API_KEY:
+        expected_key = settings.ADMIN_API_KEY
+    elif settings.is_production():
+        logger.error("admin_key_not_configured_in_production")
+        raise HTTPException(
+            status_code=500,
+            detail="Admin API key not configured. Set ADMIN_API_KEY environment variable.",
+        )
+    else:
+        # Development mode: use auto-generated key
+        expected_key = _get_dev_admin_key()
 
     # Verify the key matches using constant-time comparison
-    if not x_admin_key or not secrets.compare_digest(x_admin_key, settings.ADMIN_API_KEY):
+    if not x_admin_key or not secrets.compare_digest(x_admin_key, expected_key):
         logger.warning("admin_auth_failed", provided_key=bool(x_admin_key))
         raise HTTPException(
             status_code=403,

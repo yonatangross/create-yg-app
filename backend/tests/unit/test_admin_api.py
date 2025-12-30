@@ -54,17 +54,38 @@ async def test_verify_admin_key_missing(mock_admin_api_key):
 
 
 @pytest.mark.asyncio
-async def test_verify_admin_key_dev_mode_no_key():
-    """Test admin key verification allows access in dev mode without key configured.
+async def test_verify_admin_key_dev_mode_auto_generated():
+    """Test admin key verification in dev mode uses auto-generated key.
+
+    In dev mode without ADMIN_API_KEY configured, a temporary key is auto-generated.
+    Access is still required with this key - no unauthenticated access allowed.
 
     Note: This test uses its own ADMIN_API_KEY patch to override the autouse fixture.
     """
+    import app.api.v1.admin as admin_module
+
+    # Reset the auto-generated key to simulate fresh startup
+    admin_module._DEV_ADMIN_KEY = None
+
     with (
         patch.object(settings, "ADMIN_API_KEY", None),
         patch.object(settings, "ENVIRONMENT", "development"),
     ):
-        # Should not raise - dev mode allows access without key
-        await verify_admin_key(x_admin_key=None)
+        # First, accessing without a key should fail
+        with pytest.raises(HTTPException) as exc_info:
+            await verify_admin_key(x_admin_key=None)
+        assert exc_info.value.status_code == 403
+
+        # Get the auto-generated key
+        dev_key = admin_module._get_dev_admin_key()
+        assert dev_key is not None
+        assert len(dev_key) == 32  # 16 bytes = 32 hex chars
+
+        # Access with the auto-generated key should succeed
+        await verify_admin_key(x_admin_key=dev_key)
+
+    # Cleanup
+    admin_module._DEV_ADMIN_KEY = None
 
 
 @pytest.mark.asyncio
