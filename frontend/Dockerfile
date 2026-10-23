@@ -11,8 +11,10 @@ FROM node:22-slim AS deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm install
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # -----------------------------------------------------------------------------
 # Stage 2: Development
