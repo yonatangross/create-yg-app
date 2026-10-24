@@ -27,10 +27,12 @@ open http://localhost:5183
 | Layer | Technology |
 |-------|------------|
 | **Backend** | Python 3.12 + FastAPI + LangGraph |
-| **Frontend** | React 19 + Vite + TanStack + Tailwind |
+| **Frontend** | React 19 + Vite + TanStack Query + Tailwind |
 | **Database** | PostgreSQL 17 + pgvector |
 | **Cache** | Redis 7 (Stack) |
 | **Observability** | Langfuse (self-hosted) |
+
+The frontend ships without a router. Add one (for example `@tanstack/react-router` or `react-router`) when the app needs more than one page.
 
 ## Services
 
