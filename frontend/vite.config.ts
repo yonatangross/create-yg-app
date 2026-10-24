@@ -24,7 +24,6 @@ export default defineConfig({
 			output: {
 				manualChunks: {
 					vendor: ["react", "react-dom"],
-					router: ["@tanstack/react-router"],
 					query: ["@tanstack/react-query"],
 				},
 			},
