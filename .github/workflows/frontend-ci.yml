@@ -83,11 +83,37 @@ jobs:
         working-directory: ./frontend
         run: pnpm run typecheck
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        working-directory: ./frontend
+        run: pnpm run test
+
   # ===========================================================================
   # Phase 2: BUILD (1-2 min) - Only run if lint/type pass
   # ===========================================================================
   build:
-    needs: [lint, type-check]
+    needs: [lint, type-check, test]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
